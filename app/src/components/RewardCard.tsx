@@ -14,7 +14,7 @@ export function RewardCard({ reward }: { reward: Reward }) {
         {STATUS[reward.status]}
         {reward.expires_at ? ` · hạn ${date(reward.expires_at)}` : ''}
       </div>
-      <div className="muted small">Chỉ dùng khi đặt đơn bằng số {reward.phone_masked}. Chị nhắn mã này cho Cô Hạ khi đặt.</div>
+      <div className="muted small">Chỉ dùng khi đặt đơn bằng số {reward.phone_masked}: chọn mã ở Giỏ hàng, hoặc nhắn mã cho Cô Hạ khi đặt qua tin nhắn.</div>
     </div>
   )
 }

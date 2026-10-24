@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Icon, Page, useNavigate } from 'zmp-ui'
+import { BackBar } from '../components/BackBar'
 import { OAFollowCard } from '../components/OAFollowCard'
 import { RewardCard } from '../components/RewardCard'
 import { COURSE, LESSONS } from '../content'
@@ -28,6 +29,7 @@ export function CoursePage() {
 
   return (
     <Page className="page">
+      <BackBar fallback="/" />
       <h2>{COURSE.title}</h2>
       <div className="progress-line">
         <div className="bar">

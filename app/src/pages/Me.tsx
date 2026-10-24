@@ -62,6 +62,11 @@ export function MePage() {
         )}
       </div>
 
+      <button className="card link-row" onClick={() => navigate('/don-hang')}>
+        <b>Đơn của tôi</b>
+        <span className="muted small">Xem đơn đã đặt và trạng thái giao hàng ›</span>
+      </button>
+
       {(me?.rewards.length ?? 0) > 0 && <h3>Ưu đãi</h3>}
       {me?.rewards.map(r => <RewardCard key={r.code} reward={r} />)}
 

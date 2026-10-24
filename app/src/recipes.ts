@@ -22,7 +22,7 @@ export interface Recipe {
   tips?: string[]
   storage?: string[]
   /** Sản phẩm Bếp Cô Hạ dùng trong món (trang sản phẩm trên Haco-OS, cùng origin). */
-  product?: { name: string; href: string }
+  product?: { name: string; href: string; sku: string }
   /** Món có công thức chi tiết trong khoá học / sét, không công khai từng bước. */
   fullRecipeIn?: { label: string; to: string }
 }
@@ -44,7 +44,7 @@ export const RECIPES: Recipe[] = [
     ],
     tips: ['Sốt đã cân bằng vị, không cần thêm gia vị.'],
     storage: ['Sốt: ngăn đông dùng được 6 tháng, ngăn mát 1 tháng.'],
-    product: { name: 'Sốt Xá Xíu Bếp Cô Hạ', href: '/sot-xa-xiu' },
+    product: { name: 'Sốt Xá Xíu Bếp Cô Hạ', href: '/sot-xa-xiu', sku: 'sxx-500g' },
   },
   {
     slug: 'nom-tron-5-phut',
@@ -62,7 +62,7 @@ export const RECIPES: Recipe[] = [
       { title: 'Rắc đậu phộng rang, hành phi, rau thơm, ớt sợi lên trên' },
     ],
     tips: ['Sốt đã cân bằng vị, không cần thêm gia vị.', 'Muốn cay hơn: thêm ớt băm tươi.', 'Trộn lượng nhỏ trước, nếm thử rồi điều chỉnh theo khẩu vị gia đình.'],
-    product: { name: 'Sốt Trộn Nộm Bếp Cô Hạ', href: '/sot-tron-nom' },
+    product: { name: 'Sốt Trộn Nộm Bếp Cô Hạ', href: '/sot-tron-nom', sku: 'stn-500g' },
   },
   {
     slug: 'do-xoi-bang-khan',
@@ -79,7 +79,7 @@ export const RECIPES: Recipe[] = [
       { title: 'Đồ 30–40 phút, lật đảo 1 lần', detail: 'Lật ở phút 20 — phần trên xuống dưới, chín đều.' },
       { title: 'Ủ 5 phút rồi lấy ra', detail: 'Xôi ráo, hạt bóng, lấy ra không dính khăn.' },
     ],
-    product: { name: 'Khăn đồ xôi Bếp Cô Hạ', href: '/khan-do-xoi' },
+    product: { name: 'Khăn đồ xôi Bếp Cô Hạ', href: '/khan-do-xoi', sku: 'kdx' },
   },
   {
     slug: 'xoi-com-sen-dua',
@@ -93,7 +93,7 @@ export const RECIPES: Recipe[] = [
       { title: 'Chuẩn bị đủ 8 nguyên liệu', detail: 'Sét Xôi Cốm Sen Dừa đã chọn sẵn đủ bộ, đúng loại.' },
       { title: 'Làm theo công thức bí quyết của Cô Hạ', detail: 'Tỷ lệ và từng bước có trong sét và trong khoá "Học làm xôi cốm cùng Cô Hạ".' },
     ],
-    product: { name: 'Sét Nguyên Liệu Xôi Cốm Sen Dừa', href: '/set-xoi-com' },
+    product: { name: 'Sét Nguyên Liệu Xôi Cốm Sen Dừa', href: '/set-xoi-com', sku: 'sxc-set' },
     fullRecipeIn: { label: 'Học từng bước trong khoá xôi cốm', to: '/hoc' },
   },
 ]

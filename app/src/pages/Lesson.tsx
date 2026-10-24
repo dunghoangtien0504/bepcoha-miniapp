@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button, Page, useNavigate } from 'zmp-ui'
+import { BackBar } from '../components/BackBar'
 import { ApiError } from '../api/types'
 import { COURSE, LESSONS, LINKS } from '../content'
 import { COMPLETE_PCT } from '../lib/lessons'
@@ -69,6 +70,7 @@ export function LessonPage() {
 
   return (
     <Page className="page">
+      <BackBar fallback="/hoc" />
       <div className="muted small">Bài {lesson.no}/{LESSONS.length}</div>
       <h2>{lesson.title}</h2>
       {lesson.videoUrl ? (

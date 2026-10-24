@@ -16,6 +16,7 @@ export function IdentifyPage() {
   // Chỉ nhận đường dẫn nội bộ ("/..."), không nhận "//host" hay link ngoài (chống chuyển hướng mở).
   const nextRaw = params.get('next') || '/'
   const next = /^\/(?![/\\])/.test(nextRaw) ? nextRaw : '/'
+  const copy = identifyCopy(next)
   const [phone, setPhone] = useState('')
   const [name, setName] = useState('')
   const [agree, setAgree] = useState(false)
@@ -60,10 +61,8 @@ export function IdentifyPage() {
   return (
     <Page className="page">
       <form className="form" onSubmit={submit}>
-        <h2>Nhận khoá học</h2>
-        <p className="muted">
-          Cô cần số điện thoại để mở bài học mỗi ngày cho chị và giữ ưu đãi đúng cho số này. Cô không gửi tin quảng cáo nếu chị không đồng ý ở ô bên dưới.
-        </p>
+        <h2>{copy.title}</h2>
+        <p className="muted">{copy.why} Cô không gửi tin quảng cáo nếu chị không đồng ý ở ô bên dưới.</p>
         {!IS_ZALO && (
           <>
             <Input label="Số điện thoại" type="text" inputMode="tel" autoComplete="tel" placeholder="09xx xxx xxx" value={phone} onChange={e => { setPhone(e.target.value); setError(null) }} />
@@ -76,9 +75,20 @@ export function IdentifyPage() {
         </label>
         {error && <div className="error" role="alert">{error}</div>}
         <Button htmlType="submit" fullWidth loading={busy}>
-          {IS_ZALO ? 'Dùng số điện thoại Zalo của tôi' : 'Mở bài học đầu tiên'}
+          {IS_ZALO ? 'Dùng số điện thoại Zalo của tôi' : copy.cta}
         </Button>
       </form>
     </Page>
   )
+}
+
+/** Khách đăng ký từ đâu thì nói đúng việc đó (chính sách Mini App: nói rõ mục đích xin SĐT). */
+export function identifyCopy(next: string) {
+  if (next.startsWith('/gio-hang') || next.startsWith('/dat-hang')) {
+    return { title: 'Đăng ký để đặt hàng', why: 'Cô cần số điện thoại để giao hàng, gọi xác nhận đơn và giữ ưu đãi đúng cho số này.', cta: 'Tiếp tục đặt hàng' }
+  }
+  if (next.startsWith('/hoc') || next.startsWith('/khoa-hoc')) {
+    return { title: 'Nhận khoá học', why: 'Cô cần số điện thoại để mở bài học mỗi ngày cho chị và giữ ưu đãi đúng cho số này.', cta: 'Mở bài học đầu tiên' }
+  }
+  return { title: 'Đăng ký thành viên Bếp Cô Hạ', why: 'Cô cần số điện thoại để lưu Hạt Cốm, Sổ tay và ưu đãi đúng cho chị.', cta: 'Đăng ký' }
 }

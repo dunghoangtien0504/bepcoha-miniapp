@@ -48,5 +48,10 @@ export function createHttpApi(opts: { base?: string; getToken?: () => string | n
     revokeConsent: channel => call('POST', '/api/mini/consent/revoke', channel ? { channel } : {}),
     checkin: () => call('POST', '/api/mini/checkin', {}),
     saveRecipe: (slug, saved) => call('POST', `/api/mini/recipes/${encodeURIComponent(slug)}/save`, { saved }),
+    catalog: () => call('GET', '/api/mini/catalog'),
+    quote: req => call('POST', '/api/mini/orders/quote', req),
+    placeOrder: req => call('POST', '/api/mini/orders', req),
+    orders: () => call('GET', '/api/mini/orders'),
+    order: ref => call('GET', `/api/mini/orders/${encodeURIComponent(ref)}`),
   }
 }

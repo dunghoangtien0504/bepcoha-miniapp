@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button, Icon, Page, useNavigate, useSnackbar } from 'zmp-ui'
+import { useCart } from '../cart'
+import { BackBar } from '../components/BackBar'
 import { asset, siteUrl } from '../content'
 import { platform } from '../platform'
 import { findRecipe } from '../recipes'
@@ -14,6 +16,7 @@ export function RecipePage() {
   const { session, me, api, refreshMe, track } = useMini()
   const navigate = useNavigate()
   const { openSnackbar } = useSnackbar()
+  const cart = useCart()
   const [cooking, setCooking] = useState(false)
   const [step, setStep] = useState(0)
   const saved = !!me?.saved_recipes.includes(slug)
@@ -24,7 +27,12 @@ export function RecipePage() {
 
   useEffect(() => {
     void platform.keepAwake(cooking)
-    return () => void platform.keepAwake(false)
+    // Chế độ nấu chiếm cả màn: ẩn thanh tab dưới để tay ướt không bấm nhầm.
+    document.body.classList.toggle('cooking', cooking)
+    return () => {
+      void platform.keepAwake(false)
+      document.body.classList.remove('cooking')
+    }
   }, [cooking])
 
   if (!recipe) {
@@ -57,16 +65,35 @@ export function RecipePage() {
     void platform.openExternal(siteUrl(recipe.product.href))
   }
 
+  // "Mua đủ nguyên liệu": bỏ sản phẩm của món vào giỏ rồi mở giỏ (v2-B).
+  const productItem = recipe.product ? cart.item(recipe.product.sku) : undefined
+  const buyProduct = () => {
+    if (!productItem) return
+    cart.add(productItem.sku)
+    track('cart_add', { sku: productItem.sku, from: 'recipe', slug })
+    navigate('/gio-hang')
+  }
+
   if (cooking) {
     const s = recipe.steps[step]
     return (
       <Page className="page cook-mode">
-        <div className="muted small">
-          {recipe.title} · bước {step + 1}/{recipe.steps.length}
+        <div className="cook-top">
+          <span className="muted small">
+            {recipe.title} · bước {step + 1}/{recipe.steps.length}
+          </span>
+          <button className="text-link" onClick={() => setCooking(false)}>
+            Thoát
+          </button>
         </div>
-        <div className="cook-step">{s.title}</div>
-        {s.detail && <p className="cook-detail">{s.detail}</p>}
-        <div className="two-choices">
+        <div className="cook-progress">
+          <span style={{ width: `${((step + 1) / recipe.steps.length) * 100}%` }} />
+        </div>
+        <div className="cook-body">
+          <div className="cook-step">{s.title}</div>
+          {s.detail && <p className="cook-detail">{s.detail}</p>}
+        </div>
+        <div className="two-choices cook-actions">
           <Button variant="secondary" disabled={step === 0} onClick={() => setStep(step - 1)}>
             Bước trước
           </Button>
@@ -76,15 +103,13 @@ export function RecipePage() {
             <Button onClick={() => setCooking(false)}>Xong rồi</Button>
           )}
         </div>
-        <button className="text-link center block" onClick={() => setCooking(false)}>
-          Thoát chế độ nấu
-        </button>
       </Page>
     )
   }
 
   return (
     <Page className="page">
+      <BackBar fallback="/cong-thuc" overlay />
       <img className="recipe-hero" src={asset(recipe.image)} alt={recipe.title} />
       <h2>{recipe.title}</h2>
       <p className="muted">{recipe.summary}</p>
@@ -107,9 +132,20 @@ export function RecipePage() {
         <div className="card card-product">
           <div className="small">Món này dùng</div>
           <b>{recipe.product.name}</b>
-          <Button size="small" onClick={openProduct}>
-            Xem và đặt mua
-          </Button>
+          {productItem ? (
+            <div className="two-choices">
+              <Button size="small" variant="secondary" onClick={openProduct}>
+                Xem sản phẩm
+              </Button>
+              <Button size="small" onClick={buyProduct}>
+                Thêm vào giỏ
+              </Button>
+            </div>
+          ) : (
+            <Button size="small" onClick={openProduct}>
+              Xem và đặt mua
+            </Button>
+          )}
         </div>
       )}
 

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Button, Page, useNavigate } from 'zmp-ui'
+import { BackBar } from '../components/BackBar'
 import { RecipeCard } from '../components/RecipeCard'
 import { findRecipe, type Recipe } from '../recipes'
 import { useMini } from '../state'
@@ -16,6 +17,7 @@ export function NotebookPage() {
   if (!session) {
     return (
       <Page className="page">
+        <BackBar fallback="/" />
         <h2>Sổ tay của tôi</h2>
         <p className="muted">Đăng ký số điện thoại để lưu món yêu thích, mở trên máy nào cũng còn.</p>
         <Button onClick={() => navigate('/dang-ky?next=/so-tay')}>Đăng ký</Button>
@@ -26,6 +28,7 @@ export function NotebookPage() {
   const list = (me?.saved_recipes ?? []).map(findRecipe).filter((r): r is Recipe => !!r)
   return (
     <Page className="page">
+      <BackBar fallback="/" />
       <h2>Sổ tay của tôi</h2>
       {list.length ? (
         list.map(r => <RecipeCard key={r.slug} recipe={r} />)

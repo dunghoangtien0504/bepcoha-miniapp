@@ -108,6 +108,81 @@ export interface ProgressRes {
   unlocked: { no: number; unlocked_at: string }[]
 }
 
+// ── v2-B: giỏ hàng. Giá, giảm giá, tổng do server tính; app chỉ hiển thị. ──
+
+export interface CatalogItem {
+  sku: string
+  product: string
+  name: string
+  variant: string
+  price: number
+  image: string
+}
+
+export interface CatalogRes {
+  items: CatalogItem[]
+  /** null = chưa bật đổi Hạt Cốm (Cô Hạ chưa chốt mức quy đổi). */
+  redeem: { vnd_per_point: number; max_pct: number } | null
+}
+
+export interface CartLine { sku: string; qty: number }
+
+export interface QuoteReq {
+  items: CartLine[]
+  voucher_code?: string | null
+  use_points?: number
+}
+
+export interface OrderLine { sku: string; label: string; qty: number; unit_price: number }
+
+export interface Quote {
+  items: OrderLine[]
+  subtotal: number
+  voucher: { code: string; amount: number } | null
+  /** null khi phiên chưa xác minh hoặc chưa bật đổi điểm. */
+  points: { available: number; usable: number; used: number; amount: number; vnd_per_point: number } | null
+  total: number
+  shipping_note: string
+}
+
+export type Payment = 'cod' | 'chuyen_khoan'
+
+export interface PlaceOrderReq extends QuoteReq {
+  name: string
+  address: string
+  note?: string
+  payment: Payment
+  /** Tổng app đang hiện; lệch với server → 409 price_changed. */
+  expected_total?: number
+}
+
+export interface Order {
+  ref_code: string
+  created_at: string
+  items: OrderLine[]
+  subtotal: number
+  voucher_amount: number
+  points_used: number
+  points_amount: number
+  total: number
+  payment: Payment
+  payment_status: 'chua_tra' | 'da_tra'
+  status: 'moi' | 'huy'
+  status_label: string
+  phone_masked: string
+}
+
+export interface TransferQr {
+  bankAccount: string
+  bankCode: string
+  accountName: string
+  amount: number
+  content: string
+  qrUrl: string
+}
+
+export interface OrderRes { order: Order; qr: TransferQr | null }
+
 export interface MiniApi {
   session(req: { anon_id: string; batch?: string; ref?: string }): Promise<SessionRes>
   events(req: { anon_id: string; events: FunnelEvent[] }): Promise<void>
@@ -118,6 +193,11 @@ export interface MiniApi {
   revokeConsent(channel?: ConsentChannel): Promise<void>
   checkin(): Promise<CheckinRes>
   saveRecipe(slug: string, saved: boolean): Promise<SaveRecipeRes>
+  catalog(): Promise<CatalogRes>
+  quote(req: QuoteReq): Promise<Quote>
+  placeOrder(req: PlaceOrderReq): Promise<OrderRes>
+  orders(): Promise<{ orders: Order[] }>
+  order(ref: string): Promise<OrderRes>
 }
 
 /** Lỗi API: `code` là mã máy (snake_case), `message` là câu tiếng Việt hiện cho khách. */

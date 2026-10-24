@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { Route, useLocation } from 'react-router-dom'
 import { AnimationRoutes, App, BottomNavigation, Icon, SnackbarProvider, useNavigate } from 'zmp-ui'
 import { AppRouter } from './router'
+import { CartProvider } from './cart'
 import { ChatSheet, chatOptions } from './components/ChatSheet'
+import { CartPage } from './pages/Cart'
 import { ClaimOrderPage } from './pages/ClaimOrder'
 import { CoursePage } from './pages/Course'
 import { HomePage } from './pages/Home'
@@ -10,6 +12,8 @@ import { IdentifyPage } from './pages/Identify'
 import { LessonPage } from './pages/Lesson'
 import { MePage } from './pages/Me'
 import { NotebookPage } from './pages/Notebook'
+import { OrderDonePage } from './pages/OrderDone'
+import { OrdersPage } from './pages/Orders'
 import { PointsPage } from './pages/Points'
 import { RecipePage } from './pages/Recipe'
 import { RecipesPage } from './pages/Recipes'
@@ -28,7 +32,7 @@ const TABS: { key: string; path: string | null; label: string; icon: string }[] 
 
 function activeTab(pathname: string): string {
   if (pathname.startsWith('/cong-thuc') || pathname.startsWith('/so-tay')) return 'recipes'
-  if (pathname.startsWith('/dat-hang')) return 'shop'
+  if (pathname.startsWith('/dat-hang') || pathname.startsWith('/gio-hang') || pathname.startsWith('/don-hang')) return 'shop'
   if (pathname.startsWith('/cua-toi') || pathname.startsWith('/hat-com') || pathname.startsWith('/nhap-ma-don')) return 'me'
   return 'home'
 }
@@ -57,6 +61,9 @@ function Shell() {
         <Route path="/so-tay" element={<NotebookPage />} />
         <Route path="/hat-com" element={<PointsPage />} />
         <Route path="/dat-hang" element={<ShopPage />} />
+        <Route path="/gio-hang" element={<CartPage />} />
+        <Route path="/don-hang" element={<OrdersPage />} />
+        <Route path="/don-hang/:ref" element={<OrderDonePage />} />
         <Route path="/nhap-ma-don" element={<ClaimOrderPage />} />
         <Route path="/cua-toi" element={<MePage />} />
       </AnimationRoutes>
@@ -87,7 +94,9 @@ export function HacoMiniApp() {
       <SnackbarProvider>
         <AppRouter>
           <MiniProvider>
-            <Shell />
+            <CartProvider>
+              <Shell />
+            </CartProvider>
           </MiniProvider>
         </AppRouter>
       </SnackbarProvider>

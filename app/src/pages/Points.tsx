@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { Button, Page, useNavigate } from 'zmp-ui'
+import { BackBar } from '../components/BackBar'
+import { useCart } from '../cart'
 import { CheckinCard } from '../components/CheckinCard'
 import { useMini } from '../state'
 
@@ -8,6 +10,7 @@ import { useMini } from '../state'
 export function PointsPage() {
   const { session, me, refreshMe } = useMini()
   const navigate = useNavigate()
+  const redeem = useCart().catalog?.redeem ?? null
   const hasSession = !!session
   useEffect(() => {
     if (hasSession) void refreshMe()
@@ -16,6 +19,7 @@ export function PointsPage() {
   if (!session || !me) {
     return (
       <Page className="page">
+        <BackBar fallback="/" />
         <h2>Hạt Cốm</h2>
         <p className="muted">Điểm thưởng của Bếp Cô Hạ. Đăng ký để bắt đầu tích.</p>
         <Button onClick={() => navigate('/dang-ky?next=/hat-com')}>Đăng ký</Button>
@@ -26,6 +30,7 @@ export function PointsPage() {
   const rules = me.points_rules
   return (
     <Page className="page">
+      <BackBar fallback="/" />
       <h2>Hạt Cốm</h2>
       <div className="card points-total">
         <div className="muted small">Chị đang có</div>
@@ -42,11 +47,17 @@ export function PointsPage() {
           </li>
         ))}
       </ul>
-      <h3>Đổi quà</h3>
-      <p className="muted small">Sắp mở: dùng Hạt Cốm đổi voucher và quà của Cô Hạ.</p>
+      <h3>Dùng Hạt Cốm</h3>
+      {redeem ? (
+        <p className="muted small">
+          Trừ vào đơn đặt trong app: 1 Hạt Cốm = {redeem.vnd_per_point.toLocaleString('vi-VN')}đ, tối đa {redeem.max_pct}% giá trị đơn. Chọn ở bước Giỏ hàng.
+        </p>
+      ) : (
+        <p className="muted small">Sắp mở: dùng Hạt Cốm trừ tiền khi đặt hàng và đổi quà của Cô Hạ.</p>
+      )}
       {!session.verified && (
         <p className="muted small">
-          Để đổi quà, chị cần xác nhận số điện thoại.{' '}
+          Để dùng Hạt Cốm, chị cần xác nhận số điện thoại.{' '}
           <button className="text-link" onClick={() => navigate('/nhap-ma-don')}>
             Nhập mã đơn
           </button>{' '}

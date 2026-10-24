@@ -5,18 +5,60 @@
 //  - Mã đơn bắt đầu bằng "TEST" → khớp SĐT (da_khop, phiên được xác minh). Mã khác → chờ duyệt.
 //  - localStorage "haco_mock_days" = số ngày giả lập đã trôi qua (để mở các bài sau).
 //  - ?mock_voucher=1 trên URL lúc đăng ký → cấp voucher thử (Đợt A chưa chốt số tiền).
+//  - Giỏ hàng: bật sẵn đổi Hạt Cốm (100đ/hạt, tối đa 20%) để thấy giao diện; server thật mặc định TẮT tới khi Cô Hạ chốt.
+//  - Đơn chuyển khoản: localStorage "haco_mock_paid" = mã đơn → coi như đã nhận tiền.
 import { COMPLETE_PCT, unlockAt } from '../lib/lessons'
 import { maskPhone, normalizeVnPhone } from '../lib/phone'
 import { readLocal, writeLocal } from '../lib/storage'
 import { computeStreak, vnDay } from '../lib/streak'
 import { LESSONS } from '../content'
 import { findRecipe } from '../recipes'
-import { ApiError, type Batch, type CheckinState, type Claim, type LessonState, type MiniApi, type PointsRules, type Reward, type Session } from './types'
+import { ApiError, type Batch, type CatalogItem, type CheckinState, type Claim, type LessonState, type MiniApi, type Order, type OrderLine, type PlaceOrderReq, type PointsRules, type Quote, type QuoteReq, type Reward, type Session } from './types'
 
 const KEY = 'haco_mock_state'
 const CLAIM_LIMIT_PER_SESSION = 5
 // Giống mặc định của server (Haco-OS lib/mini/points.ts) — Cô Hạ chưa chốt mức điểm.
 const RULES: PointsRules = { checkin: 5, milestones: { '3': 10, '7': 30, '14': 60, '30': 150 } }
+
+// Giống lib/mini/catalog.ts của Haco-OS (giá BG0926-001).
+const CATALOG: CatalogItem[] = [
+  { sku: 'sxc-set', product: '/set-xoi-com', name: 'Sét Nguyên Liệu Xôi Cốm Sen Dừa', variant: '1 sét', price: 148000, image: '/images/set-xoi-com/san-pham/z7728489506719_b50b067d25c4d1ac0ef7f35b9a862580.jpg' },
+  { sku: 'sxx-500g', product: '/sot-xa-xiu', name: 'Sốt Xá Xíu Bếp Cô Hạ', variant: '500g', price: 100000, image: '/images/sot-xa-xiu/san-pham/hero-sot-xa-xiu.jpg' },
+  { sku: 'sxx-1kg', product: '/sot-xa-xiu', name: 'Sốt Xá Xíu Bếp Cô Hạ', variant: '1kg', price: 190000, image: '/images/sot-xa-xiu/san-pham/hero-sot-xa-xiu.jpg' },
+  { sku: 'stn-500g', product: '/sot-tron-nom', name: 'Sốt Trộn Nộm Bếp Cô Hạ', variant: '500g', price: 65000, image: '/images/sot-tron-nom/san-pham/710331986_1632696845246594_3341255585345294524_n.jpg' },
+  { sku: 'stn-1kg', product: '/sot-tron-nom', name: 'Sốt Trộn Nộm Bếp Cô Hạ', variant: '1kg', price: 105000, image: '/images/sot-tron-nom/san-pham/710331986_1632696845246594_3341255585345294524_n.jpg' },
+  { sku: 'kdx', product: '/khan-do-xoi', name: 'Khăn Đồ Xôi Bếp Cô Hạ', variant: '1m×1m', price: 49000, image: '/images/khan-do-xoi/san-pham/724597989_1683075906108439_2952143396022032152_n.jpg' },
+]
+const REDEEM = { vnd_per_point: 100, max_pct: 20 }
+const SHIPPING_NOTE = 'Chưa gồm phí ship. Cô Hạ gọi xác nhận và báo phí ship theo khu vực (thường 20–40k).'
+
+function mockQuote(state: MockState, req: QuoteReq): Quote {
+  const s = requireSession(state)
+  if (!req.items?.length) throw new ApiError(400, 'empty_cart', 'Giỏ hàng đang trống.')
+  const items: OrderLine[] = req.items.map(l => {
+    const c = CATALOG.find(x => x.sku === l.sku)
+    if (!c || !Number.isInteger(l.qty) || l.qty < 1 || l.qty > 20) throw new ApiError(400, 'bad_request', 'Có món trong giỏ không còn bán, chị xoá đi rồi đặt lại giúp Cô nhé.')
+    return { sku: c.sku, label: `${c.name} ${c.variant}`, qty: l.qty, unit_price: c.price }
+  })
+  const subtotal = items.reduce((t, l) => t + l.qty * l.unit_price, 0)
+  let voucher: Quote['voucher'] = null
+  if (req.voucher_code) {
+    const r = state.rewards.find(x => x.code === req.voucher_code && x.status === 'da_cap' && (!x.expires_at || new Date(x.expires_at) > now()))
+    if (!r) throw new ApiError(400, 'voucher_invalid', 'Mã ưu đãi không dùng được cho số điện thoại này, hoặc đã hết hạn.')
+    voucher = { code: r.code, amount: Math.min(r.amount, subtotal) }
+  }
+  let points: Quote['points'] = null
+  if (s.verified) {
+    const available = balance(state)
+    const cap = Math.floor(((subtotal - (voucher?.amount ?? 0)) * REDEEM.max_pct) / 100 / REDEEM.vnd_per_point)
+    const usable = Math.max(0, Math.min(available, cap))
+    const used = Math.min(req.use_points ?? 0, usable)
+    points = { available, usable, used, amount: used * REDEEM.vnd_per_point, vnd_per_point: REDEEM.vnd_per_point }
+  }
+  return { items, subtotal, voucher, points, total: subtotal - (voucher?.amount ?? 0) - (points?.amount ?? 0), shipping_note: SHIPPING_NOTE }
+}
+
+const mockQr = (o: Order) => ({ bankAccount: '0000000000', bankCode: 'MB', accountName: 'BEP CO HA (THU)', amount: o.total, content: o.ref_code, qrUrl: '' })
 
 interface MockState {
   session: (Session & { phone: string }) | null
@@ -29,9 +71,10 @@ interface MockState {
   checkins: string[]
   points: { reason: string; ref: string; delta: number }[]
   saved: string[]
+  orders: Order[]
 }
 
-const empty = (): MockState => ({ session: null, rewards: [], claims: [], failedClaims: [], claimLockedUntil: null, progress: {}, consents: [], checkins: [], points: [], saved: [] })
+const empty = (): MockState => ({ session: null, rewards: [], claims: [], failedClaims: [], claimLockedUntil: null, progress: {}, consents: [], checkins: [], points: [], saved: [], orders: [] })
 const balance = (s: MockState) => s.points.reduce((a, p) => a + p.delta, 0)
 const checkinState = (s: MockState): CheckinState => {
   const { today_done, streak, next_milestone, freeze_available } = computeStreak(s.checkins, vnDay(now()))
@@ -192,6 +235,56 @@ export function createMockApi(): MiniApi {
       state.saved = saved ? [...new Set([slug, ...state.saved])] : state.saved.filter(s => s !== slug)
       save(state)
       return delay({ saved_recipes: state.saved })
+    },
+
+    async catalog() {
+      return delay({ items: CATALOG, redeem: REDEEM })
+    },
+
+    async quote(req) {
+      return delay(mockQuote(load(), req))
+    },
+
+    async placeOrder(req: PlaceOrderReq) {
+      const state = load()
+      const s = requireSession(state)
+      if ((req.name ?? '').trim().length < 2) throw new ApiError(400, 'bad_request', 'Chị cho Cô xin tên người nhận nhé.')
+      if ((req.address ?? '').trim().length < 10) throw new ApiError(400, 'bad_request', 'Chị ghi rõ địa chỉ nhận hàng (số nhà, phường/xã, tỉnh) giúp Cô nhé.')
+      const q = mockQuote(state, req)
+      if (req.expected_total !== undefined && req.expected_total !== q.total) {
+        throw new ApiError(409, 'price_changed', 'Giá vừa thay đổi, chị xem lại tổng tiền rồi đặt lại giúp Cô nhé.', { quote: q })
+      }
+      const recent = state.orders.filter(o => now().getTime() - new Date(o.created_at).getTime() < 3600000)
+      if (recent.length >= 3) throw new ApiError(429, 'order_limit', 'Chị vừa đặt mấy đơn rồi. Cần sửa đơn thì nhắn Cô Hạ giúp Cô nhé.')
+      const ref = 'HMA' + String(Date.now()).slice(-10) + Math.random().toString(16).slice(2, 6).toUpperCase().padEnd(4, '0')
+      const order: Order = {
+        ref_code: ref, created_at: now().toISOString(), items: q.items, subtotal: q.subtotal,
+        voucher_amount: q.voucher?.amount ?? 0, points_used: q.points?.used ?? 0, points_amount: q.points?.amount ?? 0, total: q.total,
+        payment: req.payment, payment_status: 'chua_tra', status: 'moi', status_label: 'Cô Hạ đã nhận đơn', phone_masked: s.phone_masked,
+      }
+      state.orders.unshift(order)
+      if (q.voucher) state.rewards = state.rewards.map(r => (r.code === q.voucher!.code ? { ...r, status: 'da_dung' } : r))
+      if (q.points?.used) state.points.push({ reason: 'dung_don', ref, delta: -q.points.used })
+      save(state)
+      return delay({ order, qr: req.payment === 'chuyen_khoan' ? mockQr(order) : null })
+    },
+
+    async orders() {
+      const state = load()
+      requireSession(state)
+      return delay({ orders: state.orders })
+    },
+
+    async order(ref) {
+      const state = load()
+      requireSession(state)
+      const o = state.orders.find(x => x.ref_code === ref)
+      if (!o) throw new ApiError(404, 'not_found', 'Không tìm thấy đơn này.')
+      if (readLocal('haco_mock_paid') === ref && o.payment_status === 'chua_tra') {
+        o.payment_status = 'da_tra'
+        save(state)
+      }
+      return delay({ order: o, qr: o.payment === 'chuyen_khoan' && o.payment_status === 'chua_tra' ? mockQr(o) : null })
     },
 
     async lessonProgress(no, watchedPct) {

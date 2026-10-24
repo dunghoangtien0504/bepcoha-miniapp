@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Button, Input, Page, useNavigate } from 'zmp-ui'
+import { BackBar } from '../components/BackBar'
 import { ApiError } from '../api/types'
 import { useMini } from '../state'
 
@@ -16,6 +17,7 @@ export function ClaimOrderPage() {
   if (!session) {
     return (
       <Page className="page">
+        <BackBar fallback="/cua-toi" />
         <p>Chị nhận khoá học trước, rồi quay lại đây nhập mã đơn nhé.</p>
         <Button onClick={() => navigate('/')}>Nhận khoá học</Button>
       </Page>
@@ -47,6 +49,7 @@ export function ClaimOrderPage() {
 
   return (
     <Page className="page">
+      <BackBar fallback="/cua-toi" />
       <form className="form" onSubmit={submit}>
         <h2>Nhập mã đơn</h2>
         <Input
