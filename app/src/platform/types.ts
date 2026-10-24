@@ -1,0 +1,25 @@
+// Lớp platform: mọi chỗ khác nhau giữa bản web và Zalo Mini App nằm sau giao diện này.
+
+export type IdentifyMethod =
+  | { kind: 'phone_form' } // web: khách tự nhập SĐT (chưa xác minh)
+  | { kind: 'zalo'; phoneToken: string; accessToken: string } // Zalo: SĐT đã xác minh qua getPhoneNumber
+
+export interface Platform {
+  mode: 'web' | 'zalo'
+  /** Tham số khi mở app: mã lô QR (b), mã giới thiệu (ref)… */
+  launchParams(): Record<string, string>
+  /** Lấy định danh. Zalo ném lỗi 'denied' nếu khách từ chối chia sẻ SĐT. */
+  identify(): Promise<IdentifyMethod>
+  /** Có thể quan tâm OA ngay trong app không (Zalo) hay phải mở link (web). */
+  canFollowInApp: boolean
+  followOA(oaId: string): Promise<'followed' | 'opened' | 'denied'>
+  openChat(target: { kind: 'zalo_oa'; oaId: string } | { kind: 'url'; url: string }, message?: string): Promise<void>
+  share(p: { title: string; text: string; url: string }): Promise<'shared' | 'copied' | 'cancelled'>
+  openExternal(url: string): Promise<void>
+  /** Giữ màn hình sáng khi đang nấu (chế độ nấu). Zalo: keepScreen; web: Wake Lock API nếu trình duyệt hỗ trợ. */
+  keepAwake(on: boolean): Promise<void>
+  /** Token phiên: web dùng cookie httpOnly nên luôn null. */
+  getToken(): string | null
+  setToken(token: string | null): Promise<void>
+  init(): Promise<void>
+}
