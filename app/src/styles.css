@@ -405,3 +405,23 @@ body.cooking .zaui-bottom-navigation { display: none; }
 .notif-remind.is-soon { border-color: var(--haco-red); background: #fdeceb; }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--haco-red); margin-top: 6px; }
 .card-home { border-color: var(--haco-gold); background: var(--haco-gold-soft); }
+
+/* v4 (NANG-CAP-v4-TOP3-FNB.md): hạng thành viên, ví ưu đãi, đặt lại, gửi tặng */
+.tier-card { display: grid; gap: 6px; width: 100%; font: inherit; text-align: left; border-color: var(--haco-gold); background: linear-gradient(135deg, #fff 0%, var(--haco-gold-soft) 100%); }
+button.tier-card { cursor: pointer; }
+.tier-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tier-head b { font-size: 17px; color: var(--haco-green-dark); }
+.tier-badge { padding: 2px 8px; border-radius: 999px; background: var(--haco-gold); color: #fff; font-size: 12px; font-weight: 700; }
+.tier-earned { margin-left: auto; }
+.tier-bar { height: 8px; border-radius: 999px; background: #efe3c7; overflow: hidden; }
+.tier-bar span { display: block; height: 100%; border-radius: 999px; background: var(--haco-gold); transition: width 0.4s ease; }
+.tier-list li { padding: 2px 0; }
+.wallet-card, .reorder-card { display: flex; align-items: center; gap: 12px; }
+.wallet-card { border-style: dashed; border-color: var(--haco-green-2); background: #f6fbf7; }
+.wallet-amount { flex-shrink: 0; font-weight: 800; font-size: 18px; color: var(--haco-green); }
+.wallet-info, .reorder-info { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.reorder-info .small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wallet-card > button, .reorder-card > button { flex-shrink: 0; }
+.order-row .order-open { display: grid; gap: 4px; width: 100%; padding: 0; border: 0; background: none; font: inherit; text-align: left; color: inherit; cursor: pointer; }
+.order-row > button:last-child { justify-self: start; margin-top: 4px; }
+.gift-card { border-color: var(--haco-red); background: #fff6f4; display: grid; gap: 6px; }

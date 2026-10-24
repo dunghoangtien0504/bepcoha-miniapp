@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button, Page, useNavigate } from 'zmp-ui'
 import { BackBar } from '../components/BackBar'
+import { useReorder } from '../components/Reorder'
 import type { Order } from '../api/types'
 import { dayMonth, money } from '../lib/format'
 import { useMini } from '../state'
@@ -9,6 +10,7 @@ import { useMini } from '../state'
 export function OrdersPage() {
   const { api, session } = useMini()
   const navigate = useNavigate()
+  const reorder = useReorder()
   const [orders, setOrders] = useState<Order[] | null>(null)
   const [error, setError] = useState(false)
 
@@ -31,7 +33,8 @@ export function OrdersPage() {
         </>
       )}
       {orders?.map(o => (
-        <button key={o.ref_code} className="card order-row" onClick={() => navigate(`/don-hang/${o.ref_code}`)}>
+        <div key={o.ref_code} className="card order-row">
+          <button className="order-open" onClick={() => navigate(`/don-hang/${o.ref_code}`)}>
           <div className="row">
             <b>{dayMonth(o.created_at)} · {money(o.total)}</b>
             <span className="badge">{o.status_label}</span>
@@ -40,7 +43,11 @@ export function OrdersPage() {
           {o.payment === 'chuyen_khoan' && (
             <div className="muted small">{o.payment_status === 'da_tra' ? 'Đã chuyển khoản' : 'Chờ chuyển khoản'}</div>
           )}
-        </button>
+          </button>
+          <Button size="small" variant="secondary" onClick={() => reorder(o, 'orders')}>
+            Đặt lại
+          </Button>
+        </div>
       ))}
     </Page>
   )

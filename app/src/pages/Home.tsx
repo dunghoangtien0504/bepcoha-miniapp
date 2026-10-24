@@ -4,22 +4,31 @@ import { AddToHomeCard } from '../components/AddToHomeCard'
 import { CheckinCard } from '../components/CheckinCard'
 import { OAFollowCard } from '../components/OAFollowCard'
 import { RecipeCard } from '../components/RecipeCard'
+import { ReorderCard } from '../components/Reorder'
 import { UpcomingEvent } from '../components/UpcomingEvent'
+import { WalletCard } from '../components/WalletCard'
 import { BANNER, BRAND, LINKS, asset } from '../content'
+import { daypart, pickForDaypart, vnHour } from '../lib/daypart'
 import { vnDay } from '../lib/streak'
+import { tierOf } from '../lib/tiers'
 import { IS_ZALO, platform } from '../platform'
-import { recipeOfTheDay } from '../recipes'
+import { RECIPES, recipeOfTheDay } from '../recipes'
 import { useShopping } from '../shopping'
 import { useMini } from '../state'
 
 // Trang chủ kiểu "ngôi nhà" (học từ Mini App của group học + Starbucks/Duolingo/Luckin — xem NGHIEN-CUU-TOP5-VA-THIET-KE-v2.md).
 // Lý do để mở app mỗi ngày là NỘI DUNG (món của hôm nay, điểm danh), không phải giảm giá.
+// v4 (NANG-CAP-v4-TOP3-FNB.md): gợi ý món theo bữa (McDonald's), ví ưu đãi (McDonald's/Starbucks), đặt lại 1 chạm (Luckin).
 export function HomePage() {
   const { session, me, track, refreshMe } = useMini()
   const navigate = useNavigate()
   const shopping = useShopping()
   const [q, setQ] = useState('')
-  const today = recipeOfTheDay(vnDay())
+  const day = vnDay()
+  const part = daypart(vnHour())
+  const today = recipeOfTheDay(day)
+  const forMeal = pickForDaypart(RECIPES, part.key, day)
+  const tier = me?.points_earned !== undefined ? tierOf(me.points_earned).current : null
 
   const hasSession = !!session
   useEffect(() => {
@@ -62,7 +71,7 @@ export function HomePage() {
         <img className="brand-logo" src={`${import.meta.env.BASE_URL}brand/logo-256.png`} alt="" />
         <div className="brand-text">
           <div className="brand">{BRAND.name}</div>
-          <div className="brand-sub">{session ? 'Chào chị, hôm nay nấu gì nhỉ?' : BRAND.tagline}</div>
+          <div className="brand-sub">{session ? `${part.greeting}${tier ? ` · ${tier.name}` : ''}` : BRAND.tagline}</div>
         </div>
         {me && (
           <button className="points-pill" onClick={() => navigate('/hat-com')}>
@@ -85,8 +94,16 @@ export function HomePage() {
       <UpcomingEvent />
       <OAFollowCard />
       <CheckinCard />
+      <WalletCard />
+      <ReorderCard />
       <AddToHomeCard />
 
+      {forMeal && forMeal.slug !== today.slug && (
+        <>
+          <div className="section-title">{part.title}</div>
+          <RecipeCard recipe={forMeal} badge="Gợi ý" />
+        </>
+      )}
       <div className="section-title">Món của hôm nay</div>
       <RecipeCard recipe={today} badge="Hôm nay" />
 

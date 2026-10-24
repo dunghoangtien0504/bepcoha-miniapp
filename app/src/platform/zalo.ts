@@ -52,6 +52,16 @@ export const zaloPlatform: Platform = {
     }
   },
 
+  async shareText(text) {
+    const { openShareSheet } = await sdk()
+    try {
+      await openShareSheet({ type: 'text', data: { text } })
+      return 'shared'
+    } catch {
+      return 'cancelled'
+    }
+  },
+
   async openExternal(url) {
     const { openWebview } = await sdk()
     // Trang sản phẩm Haco-OS là đường dẫn tương đối ở bản web; trong Zalo phải mở bằng địa chỉ đầy đủ.

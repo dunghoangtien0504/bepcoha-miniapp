@@ -46,6 +46,23 @@ export const webPlatform: Platform = {
     }
   },
 
+  async shareText(text) {
+    if (navigator.share) {
+      try {
+        await navigator.share({ text })
+        return 'shared'
+      } catch {
+        return 'cancelled'
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(text)
+      return 'copied'
+    } catch {
+      return 'cancelled'
+    }
+  },
+
   async openExternal(url) {
     // Trang sản phẩm của Haco-OS (cùng origin, bắt đầu bằng "/") mở ngay trong tab; link ngoài mở tab mới.
     if (url.startsWith('/')) window.location.assign(url)

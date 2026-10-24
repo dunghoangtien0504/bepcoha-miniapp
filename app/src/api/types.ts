@@ -86,6 +86,8 @@ export interface MeRes {
   claims: Claim[]
   referral_code: string | null
   points: number
+  /** v4: tổng Hạt Cốm đã tích (không trừ khi tiêu) để xếp hạng thành viên. Server cũ chưa có thì undefined. */
+  points_earned?: number
   points_rules: PointsRules
   checkin: CheckinState
   saved_recipes: string[]

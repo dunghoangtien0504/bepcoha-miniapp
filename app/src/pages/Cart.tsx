@@ -5,10 +5,12 @@ import { ApiError, type Payment, type Quote } from '../api/types'
 import { useCart } from '../cart'
 import { asset } from '../content'
 import { money } from '../lib/format'
+import { GIFT_MESSAGE_MAX, checkGift, giftNote, rememberGift } from '../lib/gift'
 import { useMini } from '../state'
 
 // Giỏ hàng → đặt đơn (v2-B). Mọi con số hiển thị lấy từ server (/orders/quote); app không tự tính tiền.
 // SĐT nhận hàng là SĐT đã đăng ký: đổi số thì đăng ký lại (voucher khoá theo số).
+// v4 "Gửi tặng người thân" (học Starbucks "Say it with Starbucks"): giao tới người nhận, kèm lời nhắn in thiệp.
 export function CartPage() {
   const { session, me, api, refreshMe, track } = useMini()
   const cart = useCart()
@@ -21,6 +23,9 @@ export function CartPage() {
   const [address, setAddress] = useState('')
   const [note, setNote] = useState('')
   const [payment, setPayment] = useState<Payment>('cod')
+  const [gift, setGift] = useState(false)
+  const [toPhone, setToPhone] = useState('')
+  const [giftMsg, setGiftMsg] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -72,10 +77,20 @@ export function CartPage() {
   }
 
   const vouchers = (me?.rewards ?? []).filter(r => r.kind === 'voucher' && r.status === 'da_cap')
-  const canSubmit = !!quote && !sending && name.trim().length >= 2 && address.trim().length >= 10
+  const canSubmit = !!quote && !sending && name.trim().length >= 2 && address.trim().length >= 10 && (!gift || toPhone.trim().length >= 9)
 
   const submit = async () => {
     if (!quote) return
+    let finalNote = note.trim()
+    if (gift) {
+      const g = { toName: name, toPhone, message: giftMsg }
+      const ok = checkGift(g)
+      if (!ok.ok) {
+        setError(ok.error)
+        return
+      }
+      finalNote = giftNote(g, ok.phone, note)
+    }
     setSending(true)
     setError(null)
     try {
@@ -85,11 +100,15 @@ export function CartPage() {
         use_points: quote.points?.used ?? 0,
         name: name.trim(),
         address: address.trim(),
-        note: note.trim() || undefined,
+        note: finalNote || undefined,
         payment,
         expected_total: quote.total,
       })
       cart.clear()
+      if (gift) {
+        rememberGift({ ref: res.order.ref_code, toName: name.trim(), message: giftMsg.trim() })
+        track('gift_order', { ref: res.order.ref_code, message: !!giftMsg.trim() })
+      }
       void refreshMe()
       navigate(`/don-hang/${res.order.ref_code}`, { replace: true })
     } catch (e) {
@@ -170,19 +189,48 @@ export function CartPage() {
           )}
 
           <h3>Giao tới</h3>
+          <div className="two-choices">
+            <button className={`choice ${!gift ? 'on' : ''}`} onClick={() => setGift(false)}>
+              <b>Giao cho tôi</b>
+            </button>
+            <button className={`choice ${gift ? 'on' : ''}`} onClick={() => setGift(true)}>
+              <b>🎁 Gửi tặng</b>
+              <span className="small">Người thân, bạn bè</span>
+            </button>
+          </div>
           <div className="form">
             <div className="muted small">
-              Số điện thoại: <b>{session.phone_masked}</b>
+              {gift ? 'Người đặt' : 'Số điện thoại'}: <b>{session.phone_masked}</b>
             </div>
-            <Input label="Tên người nhận" type="text" autoComplete="name" value={name} onChange={e => setName(e.target.value)} />
+            <Input
+              label={gift ? 'Tên người nhận quà' : 'Tên người nhận'}
+              type="text"
+              autoComplete={gift ? 'off' : 'name'}
+              value={name}
+              onChange={e => setName(e.target.value)}
+            />
+            {gift && (
+              <Input label="Số điện thoại người nhận" type="text" inputMode="tel" autoComplete="off" value={toPhone} onChange={e => setToPhone(e.target.value)} />
+            )}
             <Input.TextArea
-              label="Địa chỉ nhận hàng"
+              label={gift ? 'Địa chỉ người nhận' : 'Địa chỉ nhận hàng'}
               placeholder="Số nhà, đường, phường/xã, tỉnh/thành"
-              autoComplete="street-address"
+              autoComplete={gift ? 'off' : 'street-address'}
               value={address}
               onChange={e => setAddress(e.target.value)}
             />
+            {gift && (
+              <Input.TextArea
+                label="Lời nhắn in thiệp (không bắt buộc)"
+                placeholder="Chúc mẹ luôn khoẻ, con gửi mẹ set xôi cốm Cô Hạ…"
+                maxLength={GIFT_MESSAGE_MAX}
+                showCount
+                value={giftMsg}
+                onChange={e => setGiftMsg(e.target.value)}
+              />
+            )}
             <Input label="Ghi chú (không bắt buộc)" type="text" value={note} onChange={e => setNote(e.target.value)} />
+            {gift && <p className="muted small">Cô Hạ gọi người nhận để hẹn giờ giao và không báo giá cho người nhận. Phí ship Cô báo cho chị.</p>}
           </div>
 
           <h3>Thanh toán</h3>

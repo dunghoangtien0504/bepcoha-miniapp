@@ -3,6 +3,8 @@ import { Button, Page, useNavigate } from 'zmp-ui'
 import { BackBar } from '../components/BackBar'
 import { useCart } from '../cart'
 import { CheckinCard } from '../components/CheckinCard'
+import { TierCard } from '../components/TierCard'
+import { TIERS } from '../lib/tiers'
 import { useMini } from '../state'
 
 // Hạt Cốm (học Starbucks Rewards). v2-A chỉ tích điểm; đổi quà mở ở đợt sau, khi Cô Hạ chốt bảng đổi.
@@ -37,7 +39,17 @@ export function PointsPage() {
         <div className="points-big">{me.points}</div>
         <div className="muted small">Hạt Cốm</div>
       </div>
+      <TierCard />
       <CheckinCard />
+      <h3>Hạng thành viên</h3>
+      <p className="muted small">Hạng tính theo tổng Hạt Cốm chị đã tích. Dùng Hạt Cốm để trừ tiền không làm tụt hạng.</p>
+      <ul className="plain tier-list">
+        {TIERS.map(t => (
+          <li key={t.key}>
+            <b>{t.name}</b> · từ {t.from.toLocaleString('vi-VN')} Hạt Cốm
+          </li>
+        ))}
+      </ul>
       <h3>Cách tích</h3>
       <ul className="plain">
         <li>Điểm danh mỗi ngày: +{rules.checkin}</li>

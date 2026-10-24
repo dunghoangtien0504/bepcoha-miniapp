@@ -231,6 +231,7 @@ export function createMockApi(): MiniApi {
         claims: state.claims,
         referral_code: s.verified ? 'COHA' + String(s.id).slice(0, 4) : null,
         points: balance(state),
+        points_earned: state.points.filter(p => p.delta > 0 && p.reason !== 'hoan_don').reduce((a, p) => a + p.delta, 0),
         points_rules: RULES,
         checkin: checkinState(state),
         saved_recipes: state.saved,

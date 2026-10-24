@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button, Page, useNavigate } from 'zmp-ui'
 import { RewardCard } from '../components/RewardCard'
+import { TierCard } from '../components/TierCard'
 import { COURSE, LINKS } from '../content'
 import { dayMonth as date } from '../lib/format'
 import { platform } from '../platform'
@@ -61,6 +62,8 @@ export function MePage() {
           </p>
         )}
       </div>
+
+      <TierCard link />
 
       <button className="card link-row" onClick={() => navigate('/don-hang')}>
         <b>Đơn của tôi</b>

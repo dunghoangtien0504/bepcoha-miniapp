@@ -5,6 +5,9 @@ import { BackBar } from '../components/BackBar'
 import { ApiError, type OrderRes } from '../api/types'
 import { OAFollowCard } from '../components/OAFollowCard'
 import { fullDate, money } from '../lib/format'
+import { giftShareText, recallGift } from '../lib/gift'
+import { platform } from '../platform'
+import { useReorder } from '../components/Reorder'
 import { useMini } from '../state'
 
 const POLL_MS = 5000
@@ -14,8 +17,11 @@ const POLL_MAX = 120 // ~10 phút
 // Đơn chuyển khoản: hiện mã QR, hỏi lại server mỗi 5 giây tới khi SePay báo đã nhận tiền.
 export function OrderDonePage() {
   const { ref = '' } = useParams()
-  const { api, session } = useMini()
+  const { api, session, track } = useMini()
   const navigate = useNavigate()
+  const reorder = useReorder()
+  const gift = recallGift(ref)
+  const [giftSent, setGiftSent] = useState<string | null>(null)
   const [data, setData] = useState<OrderRes | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -73,6 +79,13 @@ export function OrderDonePage() {
     }
   }
 
+  const shareGift = async () => {
+    if (!gift) return
+    track('gift_share', { ref: order.ref_code })
+    const r = await platform.shareText(giftShareText(gift.toName, gift.message))
+    setGiftSent(r === 'shared' ? 'Đã gửi lời báo quà' : r === 'copied' ? 'Đã chép lời báo quà, chị dán vào Zalo nhé' : null)
+  }
+
   return (
     <Page className="page">
       <BackBar fallback="/don-hang" />
@@ -126,7 +139,23 @@ export function OrderDonePage() {
         <div className="muted small">Trạng thái: {order.status_label}</div>
       </div>
 
+      {gift && order.status !== 'huy' && (
+        <div className="card gift-card">
+          <div className="card-title">🎁 Báo quà cho {gift.toName}</div>
+          <p className="small">Gửi lời nhắn qua Zalo để người nhận biết sắp có quà (không kèm giá).</p>
+          <Button size="small" onClick={shareGift}>
+            Gửi lời báo quà
+          </Button>
+          {giftSent && <div className="muted small">{giftSent}</div>}
+        </div>
+      )}
+
       <OAFollowCard />
+      {order.status !== 'huy' && (
+        <Button variant="tertiary" fullWidth onClick={() => reorder(order, 'order_done')}>
+          Đặt lại đơn này
+        </Button>
+      )}
       <div className="two-choices">
         <Button variant="secondary" onClick={() => navigate('/cong-thuc')}>
           Xem công thức
