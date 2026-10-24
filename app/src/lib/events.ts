@@ -25,6 +25,15 @@ export type EventName =
   | 'group_click'
   | 'cart_add'
   | 'checkout_view'
+  | 'shopping_add'
+  | 'cook_timer'
+  | 'cook_done'
+  | 'add_to_home'
+  | 'event_open'
+  | 'notification_open'
+  | 'event_remind'
+  | 'event_calendar'
+  | 'event_join'
 
 const STEP: Record<EventName, number> = {
   checkin: 6,
@@ -35,6 +44,15 @@ const STEP: Record<EventName, number> = {
   group_click: 6,
   cart_add: 7,
   checkout_view: 7,
+  shopping_add: 5,
+  cook_timer: 5,
+  cook_done: 5,
+  add_to_home: 6,
+  event_open: 6,
+  notification_open: 6,
+  event_remind: 6,
+  event_calendar: 6,
+  event_join: 6,
   welcome_view: 3,
   identify_submit: 4,
   oa_follow_click: 4,

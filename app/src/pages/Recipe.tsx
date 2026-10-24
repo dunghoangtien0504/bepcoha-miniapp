@@ -3,13 +3,20 @@ import { useParams } from 'react-router-dom'
 import { Button, Icon, Page, useNavigate, useSnackbar } from 'zmp-ui'
 import { useCart } from '../cart'
 import { BackBar } from '../components/BackBar'
-import { asset, siteUrl } from '../content'
+import { CookTimer, useCookTimer } from '../components/CookTimer'
+import { RecipeImage } from '../components/RecipeImage'
+import { siteUrl } from '../content'
+import { minutesLabel } from '../lib/timer'
 import { platform } from '../platform'
-import { findRecipe } from '../recipes'
+import { PHASES, findRecipe, type Step } from '../recipes'
+import { useShopping } from '../shopping'
 import { useMini } from '../state'
 
-// Trang công thức (học Tasty / Kitchen Stories / NYT Cooking): nguyên liệu, từng bước, chế độ nấu chữ to giữ màn hình sáng,
-// Lưu vào Sổ tay, và nút dẫn sang sản phẩm dùng trong món (công thức bán được hàng — "hộp đen").
+const LEVEL = { de: 'Dễ làm', vua: 'Cần chút kinh nghiệm' } as const
+
+// Trang công thức (học Tasty / Kitchen Stories / NYT Cooking): nguyên liệu có định lượng, các bước chia
+// Sơ chế → Nấu → Trình bày, chế độ nấu chữ to giữ màn hình sáng có hẹn giờ, Lưu vào Sổ tay, danh sách đi chợ,
+// và nút dẫn sang sản phẩm dùng trong món (công thức bán được hàng — "hộp đen").
 export function RecipePage() {
   const { slug = '' } = useParams()
   const recipe = findRecipe(slug)
@@ -17,6 +24,8 @@ export function RecipePage() {
   const navigate = useNavigate()
   const { openSnackbar } = useSnackbar()
   const cart = useCart()
+  const shopping = useShopping()
+  const timer = useCookTimer()
   const [cooking, setCooking] = useState(false)
   const [step, setStep] = useState(0)
   const saved = !!me?.saved_recipes.includes(slug)
@@ -74,8 +83,27 @@ export function RecipePage() {
     navigate('/gio-hang')
   }
 
+  const inShopping = shopping.items.some(i => i.slug === slug)
+  const addShopping = () => {
+    if (inShopping) {
+      navigate('/di-cho')
+      return
+    }
+    shopping.add(recipe)
+    track('shopping_add', { slug })
+    openSnackbar({ type: 'success', text: `Đã thêm ${recipe.ingredients.length} nguyên liệu vào danh sách đi chợ`, duration: 2000 })
+  }
+
+  const startTimer = (s: Step) => {
+    if (!s.minutes) return
+    timer.start(s.title, s.minutes)
+    track('cook_timer', { slug, minutes: s.minutes })
+  }
+
   if (cooking) {
     const s = recipe.steps[step]
+    const last = step === recipe.steps.length - 1
+    const phase = PHASES.find(p => p.key === s.phase)!
     return (
       <Page className="page cook-mode">
         <div className="cook-top">
@@ -89,18 +117,33 @@ export function RecipePage() {
         <div className="cook-progress">
           <span style={{ width: `${((step + 1) / recipe.steps.length) * 100}%` }} />
         </div>
+        <CookTimer timer={timer} />
         <div className="cook-body">
+          <span className={`phase-tag phase-${s.phase}`}>{phase.label}</span>
           <div className="cook-step">{s.title}</div>
           {s.detail && <p className="cook-detail">{s.detail}</p>}
+          {s.minutes && !timer.running && (
+            <Button variant="secondary" className="timer-btn" onClick={() => startTimer(s)}>
+              ⏱ Hẹn giờ {minutesLabel(s.minutes)}
+            </Button>
+          )}
         </div>
         <div className="two-choices cook-actions">
           <Button variant="secondary" disabled={step === 0} onClick={() => setStep(step - 1)}>
             Bước trước
           </Button>
-          {step < recipe.steps.length - 1 ? (
-            <Button onClick={() => setStep(step + 1)}>Bước tiếp</Button>
+          {last ? (
+            <Button
+              onClick={() => {
+                track('cook_done', { slug })
+                setCooking(false)
+                openSnackbar({ type: 'success', text: 'Chị nấu xong rồi! Chụp ảnh món khoe Cô Hạ nhé.', duration: 3000 })
+              }}
+            >
+              Xong rồi
+            </Button>
           ) : (
-            <Button onClick={() => setCooking(false)}>Xong rồi</Button>
+            <Button onClick={() => setStep(step + 1)}>Bước tiếp</Button>
           )}
         </div>
       </Page>
@@ -110,24 +153,37 @@ export function RecipePage() {
   return (
     <Page className="page">
       <BackBar fallback="/cong-thuc" overlay />
-      <img className="recipe-hero" src={asset(recipe.image)} alt={recipe.title} />
+      <RecipeImage recipe={recipe} className="recipe-hero" />
       <h2>{recipe.title}</h2>
       <p className="muted">{recipe.summary}</p>
-      <div className="recipe-meta">
+      <div className="recipe-facts">
         <span>
-          <Icon icon="zi-clock-1" size={16} /> {recipe.minutes} phút
+          <Icon icon="zi-clock-1" size={16} /> {minutesLabel(recipe.minutes)}
         </span>
-        <button className={`save-btn ${saved ? 'on' : ''}`} onClick={toggleSave} aria-pressed={saved}>
-          <Icon icon="zi-bookmark" size={16} /> {saved ? 'Đã lưu' : 'Lưu Sổ tay'}
-        </button>
+        <span>
+          <Icon icon="zi-group" size={16} /> {recipe.servings} người
+        </span>
+        <span>{LEVEL[recipe.level]}</span>
       </div>
+      {recipe.prepNote && <p className="prep-note">⏳ {recipe.prepNote}</p>}
+      <button className={`save-btn ${saved ? 'on' : ''}`} onClick={toggleSave} aria-pressed={saved}>
+        <Icon icon="zi-bookmark" size={16} /> {saved ? 'Đã lưu Sổ tay' : 'Lưu Sổ tay'}
+      </button>
 
       <h3>Nguyên liệu</h3>
-      <ul className="plain">
+      <ul className="ingredients">
         {recipe.ingredients.map(i => (
-          <li key={i}>{i}</li>
+          <li key={i.name}>
+            {i.qty && <b>{i.qty}</b>} {i.name}
+            {i.note && <span className="muted small"> ({i.note})</span>}
+          </li>
         ))}
       </ul>
+      {recipe.tools && <p className="muted small">Dụng cụ: {recipe.tools.join(', ')}</p>}
+      <Button size="small" variant="secondary" onClick={addShopping}>
+        {inShopping ? '✓ Đã có trong danh sách đi chợ — xem' : '🛒 Thêm vào danh sách đi chợ'}
+      </Button>
+
       {recipe.product && (
         <div className="card card-product">
           <div className="small">Món này dùng</div>
@@ -149,15 +205,26 @@ export function RecipePage() {
         </div>
       )}
 
-      <h3>Các bước</h3>
-      <ol className="steps">
-        {recipe.steps.map((s, i) => (
-          <li key={i}>
-            <b>{s.title}</b>
-            {s.detail && <span className="muted small block">{s.detail}</span>}
-          </li>
-        ))}
-      </ol>
+      {PHASES.map(p => {
+        const steps = recipe.steps.map((s, idx) => ({ s, idx })).filter(x => x.s.phase === p.key)
+        if (!steps.length) return null
+        return (
+          <section key={p.key}>
+            <h3>
+              <span className={`phase-tag phase-${p.key}`}>{p.label}</span>
+            </h3>
+            <ol className="steps" start={steps[0].idx + 1}>
+              {steps.map(({ s, idx }) => (
+                <li key={idx}>
+                  <b>{s.title}</b>
+                  {s.minutes ? <span className="step-min"> · {minutesLabel(s.minutes)}</span> : null}
+                  {s.detail && <span className="muted small block">{s.detail}</span>}
+                </li>
+              ))}
+            </ol>
+          </section>
+        )
+      })}
       {recipe.fullRecipeIn && (
         <Button variant="secondary" fullWidth onClick={() => navigate(session ? recipe.fullRecipeIn!.to : '/khoa-hoc')}>
           {recipe.fullRecipeIn.label}

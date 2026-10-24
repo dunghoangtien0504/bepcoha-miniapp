@@ -68,6 +68,24 @@ export const zaloPlatform: Platform = {
     }
   },
 
+  vibrate(ms) {
+    void sdk()
+      .then(({ vibrate }) => vibrate({ milliseconds: ms, type: 'oneShot' }))
+      .catch(() => undefined)
+  },
+
+  isOnHomeScreen: () => false,
+
+  async addToHome() {
+    const { createShortcut } = await sdk()
+    try {
+      await createShortcut({ params: { utm_source: 'shortcut' } })
+      return 'added'
+    } catch {
+      return 'dismissed'
+    }
+  },
+
   getToken: () => token,
 
   async setToken(next) {

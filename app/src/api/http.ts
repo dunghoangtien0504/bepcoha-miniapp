@@ -53,5 +53,10 @@ export function createHttpApi(opts: { base?: string; getToken?: () => string | n
     placeOrder: req => call('POST', '/api/mini/orders', req),
     orders: () => call('GET', '/api/mini/orders'),
     order: ref => call('GET', `/api/mini/orders/${encodeURIComponent(ref)}`),
+    listEvents: tab => call('GET', `/api/mini/events?tab=${tab}`),
+    event: slug => call('GET', `/api/mini/events/${encodeURIComponent(slug)}`),
+    remindEvent: (slug, kind, on) => call('POST', `/api/mini/events/${encodeURIComponent(slug)}/remind`, { kind, on }),
+    notifications: () => call('GET', '/api/mini/notifications'),
+    readNotifications: req => call('POST', '/api/mini/notifications/read', req),
   }
 }

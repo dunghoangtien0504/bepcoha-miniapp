@@ -3,6 +3,8 @@ import { Route, useLocation } from 'react-router-dom'
 import { AnimationRoutes, App, BottomNavigation, Icon, SnackbarProvider, useNavigate } from 'zmp-ui'
 import { AppRouter } from './router'
 import { CartProvider } from './cart'
+import { ShoppingProvider } from './shopping'
+import { ShoppingPage } from './pages/Shopping'
 import { ChatSheet, chatOptions } from './components/ChatSheet'
 import { CartPage } from './pages/Cart'
 import { ClaimOrderPage } from './pages/ClaimOrder'
@@ -14,6 +16,9 @@ import { MePage } from './pages/Me'
 import { NotebookPage } from './pages/Notebook'
 import { OrderDonePage } from './pages/OrderDone'
 import { OrdersPage } from './pages/Orders'
+import { EventDetailPage } from './pages/EventDetail'
+import { EventsPage } from './pages/Events'
+import { NotificationsPage } from './pages/Notifications'
 import { PointsPage } from './pages/Points'
 import { RecipePage } from './pages/Recipe'
 import { RecipesPage } from './pages/Recipes'
@@ -31,7 +36,7 @@ const TABS: { key: string; path: string | null; label: string; icon: string }[] 
 ]
 
 function activeTab(pathname: string): string {
-  if (pathname.startsWith('/cong-thuc') || pathname.startsWith('/so-tay')) return 'recipes'
+  if (pathname.startsWith('/cong-thuc') || pathname.startsWith('/so-tay') || pathname.startsWith('/di-cho')) return 'recipes'
   if (pathname.startsWith('/dat-hang') || pathname.startsWith('/gio-hang') || pathname.startsWith('/don-hang')) return 'shop'
   if (pathname.startsWith('/cua-toi') || pathname.startsWith('/hat-com') || pathname.startsWith('/nhap-ma-don')) return 'me'
   return 'home'
@@ -59,6 +64,10 @@ function Shell() {
         <Route path="/cong-thuc" element={<RecipesPage />} />
         <Route path="/cong-thuc/:slug" element={<RecipePage />} />
         <Route path="/so-tay" element={<NotebookPage />} />
+        <Route path="/di-cho" element={<ShoppingPage />} />
+        <Route path="/su-kien" element={<EventsPage />} />
+        <Route path="/su-kien/:slug" element={<EventDetailPage />} />
+        <Route path="/thong-bao" element={<NotificationsPage />} />
         <Route path="/hat-com" element={<PointsPage />} />
         <Route path="/dat-hang" element={<ShopPage />} />
         <Route path="/gio-hang" element={<CartPage />} />
@@ -95,7 +104,9 @@ export function HacoMiniApp() {
         <AppRouter>
           <MiniProvider>
             <CartProvider>
-              <Shell />
+              <ShoppingProvider>
+                <Shell />
+              </ShoppingProvider>
             </CartProvider>
           </MiniProvider>
         </AppRouter>

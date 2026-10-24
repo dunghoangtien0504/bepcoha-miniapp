@@ -18,6 +18,15 @@ export interface Platform {
   openExternal(url: string): Promise<void>
   /** Giữ màn hình sáng khi đang nấu (chế độ nấu). Zalo: keepScreen; web: Wake Lock API nếu trình duyệt hỗ trợ. */
   keepAwake(on: boolean): Promise<void>
+  /** Rung báo hết giờ hẹn (nấu). Máy không hỗ trợ thì bỏ qua. */
+  vibrate(ms: number): void
+  /** Đã chạy như app trên màn hình chính chưa (web: chế độ standalone; Zalo: không biết → false). */
+  isOnHomeScreen(): boolean
+  /**
+   * Thêm app ra màn hình chính. Zalo: createShortcut. Web: Android Chrome hiện hộp cài đặt (beforeinstallprompt);
+   * iPhone và trình duyệt khác chỉ có thể hướng dẫn khách tự làm.
+   */
+  addToHome(): Promise<'added' | 'dismissed' | 'guide_ios' | 'guide_other'>
   /** Token phiên: web dùng cookie httpOnly nên luôn null. */
   getToken(): string | null
   setToken(token: string | null): Promise<void>

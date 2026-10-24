@@ -1,12 +1,12 @@
 import { Icon, useNavigate } from 'zmp-ui'
-import { asset } from '../content'
 import type { Recipe } from '../recipes'
+import { RecipeImage } from './RecipeImage'
 
 export function RecipeCard({ recipe, badge }: { recipe: Recipe; badge?: string }) {
   const navigate = useNavigate()
   return (
     <button className="recipe-card" onClick={() => navigate(`/cong-thuc/${recipe.slug}`)}>
-      <img src={asset(recipe.image)} alt="" loading="lazy" />
+      <RecipeImage recipe={recipe} className="recipe-card-img" />
       <span className="recipe-card-body">
         {badge && <span className="badge badge-ok">{badge}</span>}
         <b>{recipe.title}</b>

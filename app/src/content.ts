@@ -46,8 +46,10 @@ export const LINKS = {
   combo: import.meta.env.VITE_COMBO_URL || '',
   publicUrl: import.meta.env.VITE_PUBLIC_URL || '',
   oaId: import.meta.env.VITE_ZALO_OA_ID || '',
-  // Lấy từ trang /dua-ca-muoi của Haco-OS (kênh thật của Cô Hạ).
-  group: import.meta.env.VITE_GROUP_URL || 'https://www.facebook.com/groups/congthuccoha',
+  // Ô "Group bếp" mở nhóm Zalo của Cô Hạ (link dạng https://zalo.me/g/…). [CHỜ HACO] gửi link nhóm.
+  zaloGroup: import.meta.env.VITE_ZALO_GROUP_URL || '',
+  // Nhóm Facebook (lấy từ trang /dua-ca-muoi của Haco-OS) — chỉ dùng khi chưa có nhóm Zalo.
+  facebookGroup: 'https://www.facebook.com/groups/congthuccoha',
   youtube: 'https://www.youtube.com/@Cohadaynauan8386/featured',
 }
 

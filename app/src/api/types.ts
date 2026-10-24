@@ -89,6 +89,8 @@ export interface MeRes {
   points_rules: PointsRules
   checkin: CheckinState
   saved_recipes: string[]
+  /** v3-A: số tin chưa đọc cho chuông (server cũ chưa có thì undefined). */
+  unread_notifications?: number
 }
 
 export interface CheckinRes {
@@ -183,6 +185,53 @@ export interface TransferQr {
 
 export interface OrderRes { order: Order; qr: TransferQr | null }
 
+// ── v3-A: sự kiện, thông báo ──
+
+export type EventKind = 'livestream' | 'workshop' | 'thu_thach' | 'uu_dai' | 'le_tet' | 'khac'
+
+export interface MiniEvent {
+  slug: string
+  title: string
+  summary: string
+  body: string
+  kind: EventKind
+  starts_at: string
+  ends_at: string | null
+  location: string
+  image: string
+  join_url: string
+  status: 'cong_bo' | 'huy'
+  capacity: number | null
+  seats_left: number | null
+  reminded: boolean
+  booked: boolean
+}
+
+export interface MiniNotification {
+  id: number
+  title: string
+  body: string
+  /** Đường dẫn trong app ("/su-kien/…") hoặc rỗng. */
+  link: string
+  image: string
+  kind: 'su_kien' | 'cong_thuc' | 'uu_dai' | 'don_hang' | 'khoe_mon' | 'he_thong'
+  published_at: string
+  read: boolean
+}
+
+export interface UpcomingReminder {
+  slug: string
+  title: string
+  starts_at: string
+  within_hour: boolean
+}
+
+export interface NotificationsRes {
+  notifications: MiniNotification[]
+  reminders: UpcomingReminder[]
+  unread: number
+}
+
 export interface MiniApi {
   session(req: { anon_id: string; batch?: string; ref?: string }): Promise<SessionRes>
   events(req: { anon_id: string; events: FunnelEvent[] }): Promise<void>
@@ -198,6 +247,11 @@ export interface MiniApi {
   placeOrder(req: PlaceOrderReq): Promise<OrderRes>
   orders(): Promise<{ orders: Order[] }>
   order(ref: string): Promise<OrderRes>
+  listEvents(tab: 'sap_toi' | 'da_qua'): Promise<{ events: MiniEvent[] }>
+  event(slug: string): Promise<{ event: MiniEvent }>
+  remindEvent(slug: string, kind: 'nhac' | 'giu_cho', on: boolean): Promise<{ event: MiniEvent }>
+  notifications(): Promise<NotificationsRes>
+  readNotifications(req: { ids: number[] } | { all: true }): Promise<{ unread: number }>
 }
 
 /** Lỗi API: `code` là mã máy (snake_case), `message` là câu tiếng Việt hiện cho khách. */

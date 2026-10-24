@@ -1,6 +1,7 @@
-# Mini App HACO (v2-B · bản web)
+# Mini App HACO (v3-A · bản web)
 
-Ngôi nhà của khách Bếp Cô Hạ: trang chủ có điểm danh hằng ngày + chuỗi ngày + Hạt Cốm, thư viện công thức (chế độ nấu, Sổ tay), giỏ hàng đặt thẳng vào POScake, khoá "Học làm xôi cốm cùng Cô Hạ", nhập mã đơn, ưu đãi. Thanh dưới 5 tab: Trang chủ · Công thức · Zalo OA · Đặt hàng · Của tôi.
+Ngôi nhà của khách Bếp Cô Hạ: trang chủ có điểm danh hằng ngày + chuỗi ngày + Hạt Cốm, thư viện công thức (chế độ nấu, Sổ tay), giỏ hàng đặt thẳng vào POScake, khoá "Học làm xôi cốm cùng Cô Hạ", nhập mã đơn, ưu đãi. Thanh dưới 5 tab: Trang chủ · Công thức · Zalo OA · Đặt hàng · Của tôi. Có sự kiện, hộp thư thông báo, danh sách đi chợ, hẹn giờ khi nấu, thêm ra màn hình chính.
+Thiết kế v3 (cộng đồng, tuân thủ Zalo mục 4.6): [`../THIET-KE-v3-CONG-DONG.md`](../THIET-KE-v3-CONG-DONG.md).
 Nghiên cứu TOP5 và thiết kế v2: [`../NGHIEN-CUU-TOP5-VA-THIET-KE-v2.md`](../NGHIEN-CUU-TOP5-VA-THIET-KE-v2.md).
 Thiết kế và hợp đồng dữ liệu: [`../THIET-KE-MINI-APP-v1.md`](../THIET-KE-MINI-APP-v1.md) (mục 4–6).
 
@@ -14,7 +15,7 @@ Node nằm ở `~/.local/node/bin`; thêm vào PATH nếu Terminal chưa có.
 npm install
 npm run dev:mock    # API giả trong trình duyệt → http://localhost:5173/m/
 npm run dev         # API thật: proxy /api sang Haco-OS-v2 (http://localhost:3030)
-npm test            # 46 test: SĐT, mở bài, chuỗi ngày, công thức, giỏ hàng, API giả, router bản production
+npm test            # 59 test: SĐT, mở bài, chuỗi ngày, công thức, giỏ hàng, đi chợ, hẹn giờ, sự kiện, API giả, router
 npm run build       # bản web → dist/
 npm run copy:haco   # chép dist/ vào Haco-OS-v2/public/m → mở http://localhost:3030/m?b=<MÃ_LÔ>
 npm run build:zalo  # bản Zalo Mini App → www/ (Đợt C, cần Zalo App ID)
@@ -28,6 +29,7 @@ Cách thử nhanh với API giả:
 - Thêm `?b=FB-2610-XOICOM` vào link để giả lập quét mã lô QR.
 - Mã đơn bắt đầu bằng `TEST` sẽ khớp và xác minh phiên; mã khác chuyển sang chờ duyệt. Nhập sai 5 lần thì bị khoá.
 - Mở `/m/dang-ky?mock_voucher=1` để thử cấp voucher.
+- Sự kiện và thông báo ở API giả là dữ liệu MẪU (tiêu đề có "[Mẫu]"), giờ tính theo lúc mở app.
 - Giỏ hàng: API giả bật sẵn đổi Hạt Cốm (server thật mặc định tắt). Đặt `localStorage.haco_mock_paid = <mã đơn HMA…>` để giả lập đã nhận chuyển khoản.
 - Tăng `localStorage.haco_mock_days` thêm 1 rồi điểm danh lại để thử chuỗi ngày và thưởng mốc.
 - Đặt `localStorage.haco_mock_days = 3` để giả lập 3 ngày trôi qua, mở thêm bài.
@@ -40,7 +42,7 @@ Cách thử nhanh với API giả:
 | `src/platform/` | Lớp 2 chế độ. `web.ts`: form SĐT, link zalo.me, Web Share. `zalo.ts`: getPhoneNumber, followOA, openShareSheet; zmp-sdk chỉ nạp ở bản Zalo |
 | `src/pages/` | Chào → Đăng ký → Khoá học → Bài học → Nhập mã đơn → Của tôi |
 | `src/content.ts` | Tên bài, link (group, YouTube), banner, sản phẩm tab Đặt hàng, câu đồng ý. Chỗ ghi **[CHỜ HACO]** chờ nội dung thật |
-| `src/recipes.ts` | Thư viện công thức — lấy từ "Hướng dẫn sử dụng" trên trang sản phẩm HACO, không tự bịa. Thêm món: thêm 1 mục, slug không đổi về sau |
+| `src/recipes.ts` | Thư viện công thức: món gắn sản phẩm lấy từ trang sản phẩm HACO; món gia đình do app biên soạn, gắn `review: 'cho_co_ha_duyet'` cho Cô Hạ đọc lại. Bước có `minutes` thì có nút hẹn giờ. Slug không đổi về sau |
 | `src/cart.tsx`, `src/lib/cart.ts` | Giỏ hàng trên máy (chỉ mã hàng + số lượng). Giá và tổng tiền luôn lấy từ server |
 | `src/lib/streak.ts` | Chuỗi ngày (giữ chuỗi 1 lần/7 ngày) — giống `Haco-OS-v2/lib/mini/checkin.ts`, sửa cả hai |
 

@@ -13,7 +13,7 @@ import { readLocal, writeLocal } from '../lib/storage'
 import { computeStreak, vnDay } from '../lib/streak'
 import { LESSONS } from '../content'
 import { findRecipe } from '../recipes'
-import { ApiError, type Batch, type CatalogItem, type CheckinState, type Claim, type LessonState, type MiniApi, type Order, type OrderLine, type PlaceOrderReq, type PointsRules, type Quote, type QuoteReq, type Reward, type Session } from './types'
+import { ApiError, type Batch, type CatalogItem, type CheckinState, type Claim, type LessonState, type MiniApi, type Order, type OrderLine, type PlaceOrderReq, type PointsRules, type Quote, type QuoteReq, type Reward, type Session, type MiniEvent, type MiniNotification } from './types'
 
 const KEY = 'haco_mock_state'
 const CLAIM_LIMIT_PER_SESSION = 5
@@ -60,6 +60,28 @@ function mockQuote(state: MockState, req: QuoteReq): Quote {
 
 const mockQr = (o: Order) => ({ bankAccount: '0000000000', bankCode: 'MB', accountName: 'BEP CO HA (THU)', amount: o.total, content: o.ref_code, qrUrl: '' })
 
+// Sự kiện và thông báo MẪU chỉ để dựng giao diện ở chế độ mock (giờ tính theo lúc mở app). Server thật lấy từ CRM.
+function mockEvents(): MiniEvent[] {
+  const at = (days: number, hour: number) => {
+    const d = new Date(now().getTime() + days * 86400000)
+    d.setHours(hour, 0, 0, 0)
+    return d.toISOString()
+  }
+  const base = { body: '', ends_at: null, image: '', join_url: '', status: 'cong_bo' as const, reminded: false, booked: false }
+  return [
+    { ...base, slug: 'live-xoi-com-mua-thu', kind: 'livestream', title: '[Mẫu] Livestream: Nấu xôi cốm mùa thu cùng Cô Hạ', summary: 'Cô Hạ nấu trực tiếp, trả lời câu hỏi của chị em.', starts_at: at(0, 23), location: '', capacity: null, seats_left: null, body: 'Buổi livestream trên nhóm Zalo của Cô Hạ. Chuẩn bị sẵn nguyên liệu để nấu cùng nhé.' },
+    { ...base, slug: 'workshop-banh-com', kind: 'workshop', title: '[Mẫu] Workshop làm bánh cốm tại bếp', summary: 'Học trực tiếp, mang thành phẩm về nhà.', starts_at: at(6, 9), location: 'Bếp Cô Hạ', capacity: 12, seats_left: 5 },
+    { ...base, slug: 'thu-thach-tuan-xoi', kind: 'thu_thach', title: '[Mẫu] Thử thách tuần: Cùng đồ xôi dẻo', summary: 'Nấu món đồ xôi, khoe ảnh để nhận Hạt Cốm.', starts_at: at(1, 8), location: '', capacity: null, seats_left: null },
+    { ...base, slug: 'live-dua-ca-muoi', kind: 'livestream', title: '[Mẫu] Livestream: Muối dưa cà giòn', summary: 'Đã diễn ra tuần trước.', starts_at: at(-7, 20), location: '', capacity: null, seats_left: null },
+  ]
+}
+
+const MOCK_NOTIFICATIONS: Omit<MiniNotification, 'read' | 'published_at'>[] = [
+  { id: 3, title: '[Mẫu] Có 22 công thức mới', body: 'Từ thịt kho trứng tới chè cốm — mở mục Công thức xem ngay.', link: '/cong-thuc', image: '', kind: 'cong_thuc' },
+  { id: 2, title: '[Mẫu] Livestream tối nay 23h', body: 'Nấu xôi cốm mùa thu cùng Cô Hạ.', link: '/su-kien/live-xoi-com-mua-thu', image: '', kind: 'su_kien' },
+  { id: 1, title: 'Chào mừng chị tới Bếp Cô Hạ', body: 'Điểm danh mỗi ngày để tích Hạt Cốm nhé.', link: '/hat-com', image: '', kind: 'he_thong' },
+]
+
 interface MockState {
   session: (Session & { phone: string }) | null
   rewards: Reward[]
@@ -72,9 +94,11 @@ interface MockState {
   points: { reason: string; ref: string; delta: number }[]
   saved: string[]
   orders: Order[]
+  reminders: { slug: string; kind: 'nhac' | 'giu_cho' }[]
+  readIds: number[]
 }
 
-const empty = (): MockState => ({ session: null, rewards: [], claims: [], failedClaims: [], claimLockedUntil: null, progress: {}, consents: [], checkins: [], points: [], saved: [], orders: [] })
+const empty = (): MockState => ({ session: null, rewards: [], claims: [], failedClaims: [], claimLockedUntil: null, progress: {}, consents: [], checkins: [], points: [], saved: [], orders: [], reminders: [], readIds: [] })
 const balance = (s: MockState) => s.points.reduce((a, p) => a + p.delta, 0)
 const checkinState = (s: MockState): CheckinState => {
   const { today_done, streak, next_milestone, freeze_available } = computeStreak(s.checkins, vnDay(now()))
@@ -118,6 +142,12 @@ function lessons(state: MockState): LessonState[] {
 function requireSession(state: MockState) {
   if (!state.session) throw new ApiError(401, 'no_session', 'Chị đăng ký số điện thoại trước giúp Cô nhé.')
   return state.session
+}
+
+function withMine(state: MockState, e: MiniEvent): MiniEvent {
+  const mine = (k: 'nhac' | 'giu_cho') => state.reminders.some(r => r.slug === e.slug && r.kind === k)
+  const booked = mine('giu_cho')
+  return { ...e, reminded: mine('nhac'), booked, seats_left: e.seats_left === null ? null : Math.max(0, e.seats_left - (booked ? 1 : 0)) }
 }
 
 export function createMockApi(): MiniApi {
@@ -204,6 +234,7 @@ export function createMockApi(): MiniApi {
         points_rules: RULES,
         checkin: checkinState(state),
         saved_recipes: state.saved,
+        unread_notifications: MOCK_NOTIFICATIONS.filter(n => !state.readIds.includes(n.id)).length,
       })
     },
 
@@ -285,6 +316,62 @@ export function createMockApi(): MiniApi {
         save(state)
       }
       return delay({ order: o, qr: o.payment === 'chuyen_khoan' && o.payment_status === 'chua_tra' ? mockQr(o) : null })
+    },
+
+    async listEvents(tab) {
+      const state = load()
+      const t = now().getTime()
+      const list = mockEvents()
+        .map(e => withMine(state, e))
+        .filter(e => (tab === 'da_qua' ? Date.parse(e.starts_at) + 7200000 < t : Date.parse(e.starts_at) + 7200000 >= t))
+        .sort((a, b) => (tab === 'da_qua' ? -1 : 1) * (Date.parse(a.starts_at) - Date.parse(b.starts_at)))
+      return delay({ events: list })
+    },
+
+    async event(slug) {
+      const e = mockEvents().find(x => x.slug === slug)
+      if (!e) throw new ApiError(404, 'not_found', 'Không tìm thấy sự kiện này.')
+      return delay({ event: withMine(load(), e) })
+    },
+
+    async remindEvent(slug, kind, on) {
+      const state = load()
+      requireSession(state)
+      const e = mockEvents().find(x => x.slug === slug)
+      if (!e) throw new ApiError(404, 'not_found', 'Không tìm thấy sự kiện này.')
+      if (on && Date.parse(e.starts_at) < now().getTime()) throw new ApiError(409, 'event_closed', 'Sự kiện này đã diễn ra hoặc đã huỷ.')
+      if (kind === 'giu_cho' && e.capacity === null) throw new ApiError(400, 'bad_request', 'Sự kiện này không cần giữ chỗ, chị bấm "Nhắc tôi" nhé.')
+      state.reminders = state.reminders.filter(r => !(r.slug === slug && r.kind === kind))
+      if (on) {
+        state.reminders.push({ slug, kind })
+        if (kind === 'giu_cho' && !state.reminders.some(r => r.slug === slug && r.kind === 'nhac')) state.reminders.push({ slug, kind: 'nhac' })
+      }
+      save(state)
+      return delay({ event: withMine(state, e) })
+    },
+
+    async notifications() {
+      const state = load()
+      const t = now().getTime()
+      const notifications = MOCK_NOTIFICATIONS.map((n, i) => ({
+        ...n,
+        published_at: new Date(t - (i + 1) * 3 * 3600000).toISOString(),
+        read: !state.session || state.readIds.includes(n.id),
+      }))
+      const reminders = mockEvents()
+        .filter(e => state.reminders.some(r => r.slug === e.slug && r.kind === 'nhac'))
+        .filter(e => Date.parse(e.starts_at) > t && Date.parse(e.starts_at) - t <= 86400000)
+        .map(e => ({ slug: e.slug, title: e.title, starts_at: e.starts_at, within_hour: Date.parse(e.starts_at) - t <= 3600000 }))
+      return delay({ notifications, reminders, unread: notifications.filter(n => !n.read).length + reminders.length })
+    },
+
+    async readNotifications(req) {
+      const state = load()
+      if (!state.session) return delay({ unread: 0 })
+      const ids = 'all' in req ? MOCK_NOTIFICATIONS.map(n => n.id) : req.ids
+      state.readIds = [...new Set([...state.readIds, ...ids])]
+      save(state)
+      return delay({ unread: MOCK_NOTIFICATIONS.filter(n => !state.readIds.includes(n.id)).length })
     },
 
     async lessonProgress(no, watchedPct) {
