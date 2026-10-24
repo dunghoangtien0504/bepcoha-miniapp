@@ -115,7 +115,7 @@ Quy tắc cũ vẫn giữ nguyên: phiên chưa xác minh không chạm hồ sơ
 - Bảng `daily_checkins`, `points_ledger`, `saved_recipes` do phiên CRM tạo. Số dư Hạt Cốm theo khách khi đã xác minh, theo phiên khi chưa.
 - Mức điểm đang để mặc định: 5/ngày; mốc 3, 7, 14, 30 ngày cộng 10, 30, 60, 150. Đổi trong app_settings `mini_points` hoặc trên màn Cài đặt CRM.
 
-**v2-B (giỏ hàng → POScake), đang làm:**
+**v2-B (giỏ hàng → POScake) đã chạy trên dev** (Haco-OS commit 6de8633; phần CRM là schema v11, chưa commit):
 - Tab Đặt hàng có 6 mã hàng, giá do server quyết (`Haco-OS-v2/lib/mini/catalog.ts`). Test `tests/mini-catalog.test.ts` báo lỗi nếu giá lệch trang sản phẩm.
 - Giỏ hàng lưu trên máy (chỉ mã hàng và số lượng). Mọi con số (tạm tính, voucher, Hạt Cốm, tổng) do server tính qua `/api/mini/orders/quote`.
 - Đặt đơn (`POST /api/mini/orders`): SĐT nhận hàng là SĐT đã đăng ký, vì voucher khoá theo số. Thanh toán COD, hoặc chuyển khoản SePay với nội dung `HMA…`.
@@ -124,7 +124,8 @@ Quy tắc cũ vẫn giữ nguyên: phiên chưa xác minh không chạm hồ sơ
 - Giới hạn: 3 đơn mỗi phiên mỗi giờ, 5 đơn mỗi SĐT mỗi ngày.
 - Bản Zalo: server chặn đặt đơn (`checkout_required`) cho tới khi làm Checkout SDK.
 - Trang cảm ơn có mã QR, tự cập nhật khi nhận tiền, mời quan tâm OA và xem công thức. "Đơn của tôi" lấy trạng thái từ đơn POScake đã đồng bộ. Công thức có nút "Thêm vào giỏ".
-- Phần phiên CRM làm: bảng `mini_orders`, lý do `dung_don`/`hoan_don`, `total_discount` gửi POScake, hàm Telegram, đăng ký mã HMA vào webhook SePay, màn huỷ đơn (trả voucher và Hạt Cốm).
+- Còn thiếu: biến môi trường variation POScake trên máy chủ thật (thiếu thì đơn vào trạng thái `loi`); gửi `total_discount` lên POScake khi `lib/pancake.ts` hỗ trợ.
+- Phần phiên CRM đã làm: bảng `mini_orders`, lý do `dung_don`/`hoan_don`, `total_discount` gửi POScake, hàm Telegram, đăng ký mã HMA vào webhook SePay, màn huỷ đơn (trả voucher và Hạt Cốm).
 
 **Còn chờ HACO:** thêm công thức, link OA, Messenger và group Zalo, banner chiến dịch, quà và mức đổi Hạt Cốm, xác nhận bảng giá và danh sách hàng bán trong app.
 

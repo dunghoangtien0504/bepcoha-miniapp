@@ -55,7 +55,7 @@ Cách thử nhanh với API giả:
 ## Còn thiếu
 
 - API thật `/api/mini/*` nằm trong Haco-OS-v2 (nhánh `rebuild/crm-v2`; v1 và v2-A ở commit c9a9398): `app/api/mini/**`, `lib/mini/**`, `lib/mini-auth.ts`, `lib/mini-consent.ts`. Test: `TEST_DB_NAME=haco_test_mini npm run test:db`.
-- Giỏ hàng v2-B chờ phiên CRM tạo bảng `mini_orders` và thêm hàm Telegram, `total_discount` (xem tài liệu v2, mục 7).
+- Giỏ hàng v2-B nằm ở commit 6de8633. Nó cần phần CRM chưa commit (schema v11 `mini_orders`, mã HMA trong webhook SePay).
 - Bản Zalo (Đợt C) chưa thử trên máy thật: cần Zalo App ID, `ZALO_APP_SECRET` ở server, và Zalo duyệt quyền lấy SĐT.
 - Video 8 bài, video chào, nguyên liệu từng bài, link combo, ID Zalo OA: chờ HACO cung cấp.
 - Số tiền và hạn dùng voucher Đợt A: chờ Cô Hạ quyết. Server không cấp voucher khi chưa có giá trị.
