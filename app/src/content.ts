@@ -53,8 +53,8 @@ export const LINKS = {
   youtube: 'https://www.youtube.com/@Cohadaynauan8386/featured',
 }
 
-/** Ảnh nằm ở Haco-OS public/images. Chạy dưới /m thì cùng origin; bản mock trỏ sang Haco-OS dev qua VITE_ASSET_ORIGIN. */
-export const asset = (path: string) => (import.meta.env.VITE_ASSET_ORIGIN || '') + path
+/** Ảnh nằm ở Haco-OS public/images (cùng origin dưới /m; bản mock trỏ sang Haco-OS dev qua VITE_ASSET_ORIGIN). Link https (ảnh sự kiện do CRM nhập) giữ nguyên. */
+export const asset = (path: string) => (/^https:\/\//.test(path) ? path : (import.meta.env.VITE_ASSET_ORIGIN || '') + path)
 /** Trang của Haco-OS (vd /sot-xa-xiu): cùng quy tắc với ảnh. */
 export const siteUrl = asset
 
