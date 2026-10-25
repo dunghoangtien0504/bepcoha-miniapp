@@ -1,21 +1,33 @@
-import { useState } from 'react'
-import { Button, Page, useNavigate, useSnackbar } from 'zmp-ui'
+import { useEffect, useState } from 'react'
+import { Button, Icon, Page, useSnackbar } from 'zmp-ui'
 import type { CatalogItem } from '../api/types'
 import { useCart } from '../cart'
+import { productGroups } from '../components/Rails'
 import { LINKS, asset } from '../content'
 import { money } from '../lib/format'
 import { platform } from '../platform'
 import { useMini } from '../state'
 
-// Tab Đặt hàng (v2-B): chọn hàng → giỏ → đặt; đơn vào POScake. Giá lấy từ server.
+// Tab Đặt hàng (v5, học McDonald's / Luckin / DoorDash): chip danh mục, lưới ảnh 2 cột, nút + và bộ tăng/giảm ngay trên thẻ,
+// thanh giỏ hàng nổi (CartBar). Đơn vào POScake, giá do server quyết.
 // Vẫn giữ đường đặt qua tin nhắn: 60–70% khách vẫn chat để mua (B4 K14).
+
+/** Danh mục suy từ trang sản phẩm (catalog server không có cột danh mục). */
+const CATS = [
+  { key: 'all', label: 'Tất cả', match: () => true },
+  { key: 'xoi', label: '🍚 Xôi cốm', match: (p: string) => p.includes('xoi-com') },
+  { key: 'sot', label: '🥫 Sốt nấu', match: (p: string) => p.startsWith('/sot-') },
+  { key: 'dung-cu', label: '🧺 Dụng cụ', match: (p: string) => p.includes('khan') },
+] as const
+
 export function ShopPage() {
   const { track } = useMini()
   const cart = useCart()
-  const navigate = useNavigate()
-
-  const groups = new Map<string, CatalogItem[]>()
-  for (const i of cart.catalog?.items ?? []) groups.set(i.product, [...(groups.get(i.product) ?? []), i])
+  const [cat, setCat] = useState<(typeof CATS)[number]['key']>('all')
+  const groups = productGroups(cart.catalog?.items ?? [])
+  const match = CATS.find(c => c.key === cat)!.match
+  const shown = groups.filter(v => match(v[0].product))
+  useEffect(() => track('shop_view', {}), [track])
 
   const chat = () => {
     track('chat_click', { from: 'shop' })
@@ -24,8 +36,21 @@ export function ShopPage() {
   }
 
   return (
-    <Page className="page page-with-cart">
-      <h2>Đặt hàng</h2>
+    <Page className="page page-with-cart page-shop">
+      <div className="shop-head">
+        <h2>Đặt hàng</h2>
+        <div className="shop-promise">
+          <span>📞 Cô gọi xác nhận và báo phí ship trước khi gửi</span>
+          <span>💵 COD hoặc chuyển khoản</span>
+        </div>
+      </div>
+      <div className="chips shop-cats">
+        {CATS.filter(c => c.key === 'all' || groups.some(v => c.match(v[0].product))).map(c => (
+          <button key={c.key} className={`chip ${cat === c.key ? 'on' : ''}`} onClick={() => setCat(c.key)}>
+            {c.label}
+          </button>
+        ))}
+      </div>
       {cart.catalogError && (
         <div className="card">
           <p>Chưa tải được danh sách hàng.</p>
@@ -34,24 +59,27 @@ export function ShopPage() {
           </Button>
         </div>
       )}
-      {!cart.catalog && !cart.catalogError && <p className="muted">Đang tải…</p>}
-      <div className="shop-list">
-        {[...groups.values()].map(variants => (
+      {!cart.catalog && !cart.catalogError && (
+        <div className="shop-grid">
+          {[0, 1, 2, 3].map(k => (
+            <div key={k} className="shop-card skeleton-card">
+              <div className="skeleton sk-img" />
+              <div className="skeleton sk-line" />
+              <div className="skeleton sk-line short" />
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="shop-grid">
+        {shown.map(variants => (
           <ProductCard key={variants[0].product} variants={variants} />
         ))}
       </div>
-      <p className="muted small">Giá chưa gồm phí ship. Thanh toán khi nhận hàng (COD) hoặc chuyển khoản.</p>
+      <p className="muted small center">Giá chưa gồm phí ship. Cô Hạ gọi xác nhận và báo phí ship.</p>
       {(LINKS.oaId || LINKS.messenger) && (
         <Button variant="secondary" fullWidth onClick={chat}>
           Đặt nhanh qua tin nhắn với Cô Hạ
         </Button>
-      )}
-      {cart.count > 0 && (
-        <div className="sticky-cta">
-          <Button fullWidth onClick={() => navigate('/gio-hang')}>
-            Xem giỏ hàng · {cart.count} món
-          </Button>
-        </div>
       )}
     </Page>
   )
@@ -63,32 +91,48 @@ function ProductCard({ variants }: { variants: CatalogItem[] }) {
   const { openSnackbar } = useSnackbar()
   const [sku, setSku] = useState(variants[0].sku)
   const item = variants.find(v => v.sku === sku) ?? variants[0]
-  const inCart = cart.lines.find(l => l.sku === item.sku)?.qty ?? 0
+  const qty = cart.lines.find(l => l.sku === item.sku)?.qty ?? 0
 
   const add = () => {
     cart.add(item.sku)
     track('cart_add', { sku: item.sku, from: 'shop' })
-    openSnackbar({ text: `Đã thêm ${item.name} ${item.variant} vào giỏ`, type: 'success', duration: 1500 })
+    if (!qty) openSnackbar({ text: `Đã thêm ${item.name} ${item.variant}`, type: 'success', duration: 1200 })
   }
 
   return (
-    <div className="product-card">
-      <img src={asset(item.image)} alt="" loading="lazy" />
-      <div className="product-info">
-        <b>{item.name}</b>
-        {variants.length > 1 && (
-          <div className="chips">
-            {variants.map(v => (
-              <button key={v.sku} className={`chip ${v.sku === sku ? 'on' : ''}`} onClick={() => setSku(v.sku)}>
-                {v.variant}
-              </button>
-            ))}
+    <div className="shop-card">
+      <div className="shop-img">
+        <img src={asset(item.image)} alt="" loading="lazy" />
+      </div>
+      <div className="shop-name">{item.name}</div>
+      {variants.length > 1 ? (
+        <div className="variant-row">
+          {variants.map(v => (
+            <button key={v.sku} className={`variant ${v.sku === sku ? 'on' : ''}`} onClick={() => setSku(v.sku)}>
+              {v.variant}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="muted small">{item.variant}</div>
+      )}
+      <div className="shop-foot">
+        <span className="shop-price">{money(item.price)}</span>
+        {qty ? (
+          <div className="mini-stepper">
+            <button aria-label="Bớt 1" onClick={() => cart.set(item.sku, qty - 1)}>
+              −
+            </button>
+            <span>{qty}</span>
+            <button aria-label="Thêm 1" onClick={add}>
+              +
+            </button>
           </div>
+        ) : (
+          <button className="add-btn" aria-label={`Thêm ${item.name} ${item.variant}`} onClick={add}>
+            <Icon icon="zi-plus" size={18} />
+          </button>
         )}
-        <div className="product-price">{money(item.price)}</div>
-        <Button size="small" onClick={add}>
-          {inCart ? `Thêm nữa (đang có ${inCart})` : 'Thêm vào giỏ'}
-        </Button>
       </div>
     </div>
   )

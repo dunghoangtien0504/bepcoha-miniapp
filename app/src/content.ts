@@ -73,3 +73,23 @@ export const SHOP_ITEMS = [
   { name: 'Sốt Trộn Nộm Bếp Cô Hạ', href: '/sot-tron-nom', image: '/images/sot-tron-nom/san-pham/710331986_1632696845246594_3341255585345294524_n.jpg' },
   { name: 'Khăn đồ xôi Bếp Cô Hạ', href: '/khan-do-xoi', image: '/images/khan-do-xoi/san-pham/724597989_1683075906108439_2952143396022032152_n.jpg' },
 ]
+
+/** Banner trượt trang chủ (v5). Slide đầu là chiến dịch đang chạy; chữ lấy từ nội dung đã có, không tự hứa thêm. [CHỜ HACO] ảnh banner riêng. */
+export const BANNERS = [
+  BANNER,
+  {
+    title: 'Sốt Xá Xíu Bếp Cô Hạ',
+    subtitle: 'Lên màu đỏ đẹp, thơm như tiệm',
+    image: '/images/sot-xa-xiu/san-pham/hero-sot-xa-xiu.jpg',
+    to: '/dat-hang',
+  },
+  {
+    title: 'Cơm nhà mỗi ngày',
+    subtitle: 'Công thức từng bước, có hẹn giờ khi nấu',
+    image: '/images/cong-thuc/ca-kho-to.jpg',
+    to: '/cong-thuc',
+  },
+]
+
+/** Khoá học chỉ hiện khi đã có ít nhất 1 video bài học (phản biện CEO: đừng dẫn khách vào khoá rỗng). */
+export const COURSE_READY = LESSONS.some(l => !!l.videoUrl)

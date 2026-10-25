@@ -38,6 +38,12 @@ export type EventName =
   | 'wallet_use'
   | 'gift_order'
   | 'gift_share'
+  | 'home_view'
+  | 'shop_view'
+  | 'banner_click'
+  | 'week_plan_view'
+  | 'week_plan_share'
+  | 'upsell_add'
 
 const STEP: Record<EventName, number> = {
   checkin: 6,
@@ -61,6 +67,12 @@ const STEP: Record<EventName, number> = {
   wallet_use: 7,
   gift_order: 7,
   gift_share: 9,
+  home_view: 3,
+  shop_view: 7,
+  banner_click: 5,
+  week_plan_view: 5,
+  week_plan_share: 9,
+  upsell_add: 7,
   welcome_view: 3,
   identify_submit: 4,
   oa_follow_click: 4,

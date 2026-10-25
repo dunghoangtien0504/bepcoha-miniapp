@@ -51,14 +51,16 @@ export function MePage() {
         <div>
           Số điện thoại: <b>{session.phone_masked}</b>
         </div>
-        <div className={`badge ${session.verified ? 'badge-ok' : ''}`}>{session.verified ? 'Đã xác minh' : 'Chưa xác minh'}</div>
-        {!session.verified && (
+        {session.verified ? (
+          <div className="badge badge-ok">Đã xác nhận số</div>
+        ) : (
+          // Phản biện của khách: "Chưa xác minh" nghe như bị nghi ngờ. Vẫn mua bình thường; xác nhận chỉ để dùng Hạt Cốm.
           <p className="muted small">
-            Chị đã mua hàng của Bếp?{' '}
+            Chị vẫn đặt hàng bình thường. Muốn dùng Hạt Cốm trừ tiền thì Cô cần xác nhận số: chị từng mua của Bếp thì{' '}
             <button className="text-link" onClick={() => navigate('/nhap-ma-don')}>
-              Nhập mã đơn
+              nhập mã đơn cũ
             </button>{' '}
-            để Cô xác nhận đúng số của chị.
+            (mã nằm trong tin nhắn xác nhận đơn), hoặc nhắn Cô Hạ để Cô ghép giúp.
           </p>
         )}
       </div>

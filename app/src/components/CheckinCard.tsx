@@ -6,11 +6,39 @@ import { useMini } from '../state'
 
 // Điểm danh hằng ngày + chuỗi ngày (học Duolingo). Quà theo mốc là cố định, KHÔNG may rủi
 // (vòng quay/bốc thăm là khuyến mại may rủi, phải đăng ký Sở Công Thương).
-export function CheckinCard() {
-  const { session, me, api, refreshMe, track } = useMini()
-  const navigate = useNavigate()
+/** Bấm điểm danh: gọi server, báo số Hạt Cốm nhận được. Dùng chung cho thẻ điểm danh và thẻ thành viên ở trang chủ. */
+export function useCheckin() {
+  const { me, api, refreshMe, track } = useMini()
   const { openSnackbar } = useSnackbar()
   const [busy, setBusy] = useState(false)
+
+  const doCheckin = async () => {
+    if (!me) return
+    setBusy(true)
+    track('checkin', { streak: me.checkin.streak })
+    try {
+      const res = await api.checkin()
+      const total = res.earned.reduce((a, e) => a + e.points, 0)
+      const milestone = res.earned.find(e => e.reason === 'moc_chuoi')
+      openSnackbar({
+        type: 'success',
+        text: milestone ? `Chuỗi ${milestone.milestone} ngày! +${total} Hạt Cốm` : total ? `+${total} Hạt Cốm. Hẹn chị ngày mai nhé` : 'Hôm nay chị đã điểm danh rồi',
+        duration: 3000,
+      })
+      await refreshMe()
+    } catch (e) {
+      openSnackbar({ type: 'error', text: e instanceof ApiError ? e.message : 'Chưa điểm danh được, chị thử lại nhé', duration: 3000 })
+    } finally {
+      setBusy(false)
+    }
+  }
+  return { busy, doCheckin }
+}
+
+export function CheckinCard() {
+  const { session, me } = useMini()
+  const navigate = useNavigate()
+  const { busy, doCheckin } = useCheckin()
 
   if (!session || !me) {
     return (
@@ -32,26 +60,6 @@ export function CheckinCard() {
   const nextBonus = c.next_milestone ? me.points_rules.milestones[String(c.next_milestone)] : undefined
   const goal = c.next_milestone ?? MILESTONES[MILESTONES.length - 1]
   const filled = Math.min(c.streak, goal)
-
-  const doCheckin = async () => {
-    setBusy(true)
-    track('checkin', { streak: c.streak })
-    try {
-      const res = await api.checkin()
-      const total = res.earned.reduce((a, e) => a + e.points, 0)
-      const milestone = res.earned.find(e => e.reason === 'moc_chuoi')
-      openSnackbar({
-        type: 'success',
-        text: milestone ? `Chuỗi ${milestone.milestone} ngày! +${total} Hạt Cốm` : total ? `+${total} Hạt Cốm. Hẹn chị ngày mai nhé` : 'Hôm nay chị đã điểm danh rồi',
-        duration: 3000,
-      })
-      await refreshMe()
-    } catch (e) {
-      openSnackbar({ type: 'error', text: e instanceof ApiError ? e.message : 'Chưa điểm danh được, chị thử lại nhé', duration: 3000 })
-    } finally {
-      setBusy(false)
-    }
-  }
 
   return (
     <div className="card checkin">

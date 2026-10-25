@@ -24,7 +24,7 @@ export function checkGift(g: GiftInput): GiftCheck {
 /** Ghi chú đơn khi gửi tặng. Server cắt ghi chú ở 500 ký tự; phần quà đứng đầu để không bị cắt. */
 export function giftNote(g: GiftInput, phone: string, note: string): string {
   const parts = [`[QUÀ TẶNG] Người nhận: ${g.toName.trim()} · SĐT ${phone}. Gọi người nhận khi giao, không báo giá cho người nhận.`]
-  if (g.message.trim()) parts.push(`Lời nhắn in thiệp: “${g.message.trim()}”`)
+  if (g.message.trim()) parts.push(`Lời nhắn kèm quà: “${g.message.trim()}”`)
   if (note.trim()) parts.push(`Ghi chú: ${note.trim()}`)
   return parts.join(' ')
 }

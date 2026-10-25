@@ -5,6 +5,7 @@ import { AppRouter } from './router'
 import { CartProvider } from './cart'
 import { ShoppingProvider } from './shopping'
 import { ShoppingPage } from './pages/Shopping'
+import { CartBar } from './components/CartBar'
 import { ChatSheet, chatOptions } from './components/ChatSheet'
 import { CartPage } from './pages/Cart'
 import { ClaimOrderPage } from './pages/ClaimOrder'
@@ -24,6 +25,7 @@ import { RecipePage } from './pages/Recipe'
 import { RecipesPage } from './pages/Recipes'
 import { ShopPage } from './pages/Shop'
 import { WelcomePage } from './pages/Welcome'
+import { WeeklyPlanPage } from './pages/WeeklyPlan'
 import { MiniProvider, useMini } from './state'
 
 // Thanh dưới 5 tab (học Mini App của group học): Trang chủ · Công thức · Zalo OA · Đặt hàng · Của tôi.
@@ -48,7 +50,7 @@ function Shell() {
   const navigate = useNavigate()
   const [chatOpen, setChatOpen] = useState(false)
 
-  if (!ready) return <div className="boot">Đang mở Bếp Cô Hạ…</div>
+  if (!ready) return <BootSkeleton />
   if (bootError) return <div className="boot">{bootError}</div>
 
   const tabs = chatOptions().length ? TABS : TABS.filter(t => t.key !== 'oa')
@@ -65,6 +67,7 @@ function Shell() {
         <Route path="/cong-thuc/:slug" element={<RecipePage />} />
         <Route path="/so-tay" element={<NotebookPage />} />
         <Route path="/di-cho" element={<ShoppingPage />} />
+        <Route path="/di-cho-tuan" element={<WeeklyPlanPage />} />
         <Route path="/su-kien" element={<EventsPage />} />
         <Route path="/su-kien/:slug" element={<EventDetailPage />} />
         <Route path="/thong-bao" element={<NotificationsPage />} />
@@ -76,6 +79,7 @@ function Shell() {
         <Route path="/nhap-ma-don" element={<ClaimOrderPage />} />
         <Route path="/cua-toi" element={<MePage />} />
       </AnimationRoutes>
+      {!hideBar && <CartBar />}
       <ChatSheet visible={chatOpen} onClose={() => setChatOpen(false)} />
       {!hideBar && (
         <BottomNavigation
@@ -94,6 +98,26 @@ function Shell() {
         </BottomNavigation>
       )}
     </>
+  )
+}
+
+/** Màn chờ dạng khung xương (giống bố cục trang chủ) thay cho chữ "Đang mở…": khách thấy app đang lên, không thấy trang trắng. */
+function BootSkeleton() {
+  return (
+    <div className="page boot-skeleton" aria-label="Đang mở Bếp Cô Hạ">
+      <div className="boot-head">
+        <img src={`${import.meta.env.BASE_URL}brand/logo-256.png`} alt="" />
+        <div className="skeleton sk-line" style={{ width: 140 }} />
+      </div>
+      <div className="skeleton sk-search" />
+      <div className="skeleton sk-member" />
+      <div className="sk-quick">
+        {[0, 1, 2, 3].map(k => (
+          <div key={k} className="skeleton sk-circle" />
+        ))}
+      </div>
+      <div className="skeleton sk-banner" />
+    </div>
   )
 }
 

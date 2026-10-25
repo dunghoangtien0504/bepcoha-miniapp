@@ -6,11 +6,12 @@ import { useCart } from '../cart'
 import { asset } from '../content'
 import { money } from '../lib/format'
 import { GIFT_MESSAGE_MAX, checkGift, giftNote, rememberGift } from '../lib/gift'
+import { missingFields, upsellFor } from '../lib/checkout'
 import { useMini } from '../state'
 
 // Giỏ hàng → đặt đơn (v2-B). Mọi con số hiển thị lấy từ server (/orders/quote); app không tự tính tiền.
 // SĐT nhận hàng là SĐT đã đăng ký: đổi số thì đăng ký lại (voucher khoá theo số).
-// v4 "Gửi tặng người thân" (học Starbucks "Say it with Starbucks"): giao tới người nhận, kèm lời nhắn in thiệp.
+// v4 "Gửi tặng người thân" (học Starbucks "Say it with Starbucks"): giao tới người nhận, kèm lời nhắn.
 export function CartPage() {
   const { session, me, api, refreshMe, track } = useMini()
   const cart = useCart()
@@ -77,7 +78,9 @@ export function CartPage() {
   }
 
   const vouchers = (me?.rewards ?? []).filter(r => r.kind === 'voucher' && r.status === 'da_cap')
-  const canSubmit = !!quote && !sending && name.trim().length >= 2 && address.trim().length >= 10 && (!gift || toPhone.trim().length >= 9)
+  const missing = missingFields({ name, address, gift, toPhone })
+  const canSubmit = !!quote && !sending && !missing.length
+  const upsell = upsellFor(cart.lines, cart.catalog?.items ?? [])
 
   const submit = async () => {
     if (!quote) return
@@ -150,6 +153,34 @@ export function CartPage() {
         + Chọn thêm hàng
       </button>
 
+      {/* Gợi ý mua kèm (phản biện CEO, theo bản đồ "bổ trợ tiếp theo" ở HACO-LOOP/06): tối đa 2 món chưa có trong giỏ. */}
+      {upsell.length > 0 && (
+        <div className="upsell">
+          <div className="small muted">Hay mua kèm</div>
+          {upsell.map(u => (
+            <div key={u.item.sku} className="upsell-row">
+              <img src={asset(u.item.image)} alt="" />
+              <span className="upsell-text">
+                <b>
+                  {u.item.name} {u.item.variant}
+                </b>
+                <span className="muted small">{u.why}</span>
+              </span>
+              <button
+                className="add-btn"
+                aria-label={`Thêm ${u.item.name}`}
+                onClick={() => {
+                  cart.add(u.item.sku)
+                  track('upsell_add', { sku: u.item.sku })
+                }}
+              >
+                +
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {!session ? (
         <div className="card">
           <p>Chị đăng ký số điện thoại để Cô Hạ giao hàng và gọi xác nhận nhé.</p>
@@ -221,7 +252,7 @@ export function CartPage() {
             />
             {gift && (
               <Input.TextArea
-                label="Lời nhắn in thiệp (không bắt buộc)"
+                label="Lời nhắn kèm quà (không bắt buộc)"
                 placeholder="Chúc mẹ luôn khoẻ, con gửi mẹ set xôi cốm Cô Hạ…"
                 maxLength={GIFT_MESSAGE_MAX}
                 showCount
@@ -270,6 +301,7 @@ export function CartPage() {
               <p className="muted small">{quote.shipping_note}</p>
             </div>
           )}
+          {missing.length > 0 && <div className="hint">Chị điền thêm: {missing.join(', ')}.</div>}
           {quoteError && <div className="error">{quoteError}</div>}
           {error && <div className="error">{error}</div>}
 

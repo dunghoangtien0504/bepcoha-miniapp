@@ -7,7 +7,7 @@ import { CookTimer, useCookTimer } from '../components/CookTimer'
 import { RecipeImage } from '../components/RecipeImage'
 import { siteUrl } from '../content'
 import { minutesLabel } from '../lib/timer'
-import { platform } from '../platform'
+import { IS_ZALO, platform } from '../platform'
 import { PHASES, findRecipe, type Step } from '../recipes'
 import { useShopping } from '../shopping'
 import { useMini } from '../state'
@@ -122,6 +122,7 @@ export function RecipePage() {
           <span className={`phase-tag phase-${s.phase}`}>{phase.label}</span>
           <div className="cook-step">{s.title}</div>
           {s.detail && <p className="cook-detail">{s.detail}</p>}
+          {last && recipe.doneSign && <p className="cook-done">✓ Món đạt khi: {recipe.doneSign}</p>}
           {s.minutes && !timer.running && (
             <Button variant="secondary" className="timer-btn" onClick={() => startTimer(s)}>
               ⏱ Hẹn giờ {minutesLabel(s.minutes)}
@@ -154,6 +155,12 @@ export function RecipePage() {
     <Page className="page">
       <BackBar fallback="/cong-thuc" overlay />
       <RecipeImage recipe={recipe} className="recipe-hero" />
+      {/* Ảnh CC phải ghi tác giả và giấy phép. Chỉ ghi chữ, không gắn link (Zalo mục 4.1 cấm đưa khách ra link ngoài). */}
+      {recipe.imageCredit && (
+        <p className="img-credit">
+          Ảnh minh hoạ: {recipe.imageCredit.author} · {recipe.imageCredit.license} · Wikimedia Commons
+        </p>
+      )}
       <h2>{recipe.title}</h2>
       <p className="muted">{recipe.summary}</p>
       <div className="recipe-facts">
@@ -188,19 +195,28 @@ export function RecipePage() {
         <div className="card card-product">
           <div className="small">Món này dùng</div>
           <b>{recipe.product.name}</b>
+          {/* Bản Zalo không mở trang web sản phẩm (mục 4.1), chỉ thêm vào giỏ trong app. */}
           {productItem ? (
-            <div className="two-choices">
-              <Button size="small" variant="secondary" onClick={openProduct}>
-                Xem sản phẩm
-              </Button>
+            IS_ZALO ? (
               <Button size="small" onClick={buyProduct}>
                 Thêm vào giỏ
               </Button>
-            </div>
+            ) : (
+              <div className="two-choices">
+                <Button size="small" variant="secondary" onClick={openProduct}>
+                  Xem sản phẩm
+                </Button>
+                <Button size="small" onClick={buyProduct}>
+                  Thêm vào giỏ
+                </Button>
+              </div>
+            )
           ) : (
-            <Button size="small" onClick={openProduct}>
-              Xem và đặt mua
-            </Button>
+            !IS_ZALO && (
+              <Button size="small" onClick={openProduct}>
+                Xem và đặt mua
+              </Button>
+            )
           )}
         </div>
       )}
@@ -225,6 +241,12 @@ export function RecipePage() {
           </section>
         )
       })}
+      {recipe.doneSign && (
+        <div className="card done-sign">
+          <b>✓ Món đạt khi</b>
+          <span>{recipe.doneSign}</span>
+        </div>
+      )}
       {recipe.fullRecipeIn && (
         <Button variant="secondary" fullWidth onClick={() => navigate(session ? recipe.fullRecipeIn!.to : '/khoa-hoc')}>
           {recipe.fullRecipeIn.label}

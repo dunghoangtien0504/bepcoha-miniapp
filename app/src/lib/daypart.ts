@@ -29,20 +29,44 @@ export function daypart(hour: number): DaypartInfo {
   return INFO.toi
 }
 
-/** Chọn món theo bữa từ danh sách: lọc theo luật của bữa, đổi mỗi ngày; không có món hợp thì lấy cả danh sách. */
-export function pickForDaypart<T extends { category: string; minutes: number }>(list: T[], part: Daypart, vnDayStr: string): T | undefined {
-  const rules: Record<Daypart, (r: T) => boolean> = {
-    // Sáng nghĩ bữa trưa, chiều và tối nghĩ bữa cơm gia đình: món mặn, canh, rau.
-    sang: r => ['mon-man', 'canh', 'rau-goi'].includes(r.category),
-    trua: r => r.minutes <= 30,
-    chieu: r => ['mon-man', 'canh', 'rau-goi', 'mon-chay'].includes(r.category),
-    toi: r => ['mon-man', 'canh', 'xoi-com', 'che-banh'].includes(r.category),
+type Pickable = { slug?: string; category: string; minutes: number }
+
+// Sáng nghĩ bữa trưa, chiều và tối nghĩ bữa cơm gia đình: món mặn, canh, rau.
+const RULES: Record<Daypart, (r: Pickable) => boolean> = {
+  sang: r => ['mon-man', 'canh', 'rau-goi'].includes(r.category),
+  trua: r => r.minutes <= 30,
+  chieu: r => ['mon-man', 'canh', 'rau-goi', 'mon-chay'].includes(r.category),
+  // Tối nghĩ bữa cơm ngày mai: chỉ món mặn, canh, rau (không gợi ý chè — phản biện của khách nội trợ).
+  toi: r => ['mon-man', 'canh', 'rau-goi'].includes(r.category),
+}
+// Lệch theo bữa để 4 bữa trong cùng một ngày không ra trùng món.
+const OFFSET: Record<Daypart, number> = { sang: 0, trua: 3, chieu: 5, toi: 7 }
+
+/** Món hợp bữa; không có món nào hợp thì lấy cả danh sách. */
+const poolFor = <T extends Pickable>(list: T[], part: Daypart) => {
+  const pool = list.filter(RULES[part])
+  return pool.length ? pool : list
+}
+const startIndex = (len: number, part: Daypart, vnDayStr: string) => {
+  const n = Math.round(Date.parse(vnDayStr + 'T00:00:00Z') / 86400000) + OFFSET[part]
+  return ((n % len) + len) % len
+}
+
+/** Chọn món theo bữa từ danh sách, đổi mỗi ngày. */
+export function pickForDaypart<T extends Pickable>(list: T[], part: Daypart, vnDayStr: string): T | undefined {
+  const from = poolFor(list, part)
+  return from.length ? from[startIndex(from.length, part, vnDayStr)] : undefined
+}
+
+/** Nhiều món theo bữa cho dải cuộn ngang: bắt đầu từ món của bữa hôm nay, bỏ món trong `skip`. */
+export function pickManyForDaypart<T extends Pickable & { slug: string }>(list: T[], part: Daypart, vnDayStr: string, count: number, skip: string[] = []): T[] {
+  const from = poolFor(list, part)
+  if (!from.length) return []
+  const start = startIndex(from.length, part, vnDayStr)
+  const out: T[] = []
+  for (let i = 0; i < from.length && out.length < count; i++) {
+    const r = from[(start + i) % from.length]
+    if (!skip.includes(r.slug)) out.push(r)
   }
-  const pool = list.filter(rules[part])
-  const from = pool.length ? pool : list
-  if (!from.length) return undefined
-  const n = Math.round(Date.parse(vnDayStr + 'T00:00:00Z') / 86400000)
-  // Lệch theo bữa để 4 bữa trong cùng một ngày không ra trùng món.
-  const offset = { sang: 0, trua: 3, chieu: 5, toi: 7 }[part]
-  return from[(((n + offset) % from.length) + from.length) % from.length]
+  return out
 }

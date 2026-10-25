@@ -92,3 +92,16 @@ describe('gửi tặng', () => {
     expect(giftShareText('Mẹ', 'Thương mẹ')).not.toMatch(/\d+đ/)
   })
 })
+
+describe('dải món theo bữa', () => {
+  it('đủ số món, không trùng, đúng luật bữa, bỏ món skip', async () => {
+    const { pickManyForDaypart, pickForDaypart } = await import('./daypart')
+    const first = pickForDaypart(RECIPES, 'trua', '2026-10-24')!
+    const list = pickManyForDaypart(RECIPES, 'trua', '2026-10-24', 5)
+    expect(list[0]).toBe(first)
+    expect(new Set(list.map(r => r.slug)).size).toBe(list.length)
+    expect(list.every(r => r.minutes <= 30)).toBe(true)
+    const skipped = pickManyForDaypart(RECIPES, 'trua', '2026-10-24', 5, [first.slug])
+    expect(skipped.map(r => r.slug)).not.toContain(first.slug)
+  })
+})

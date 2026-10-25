@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Icon, Page } from 'zmp-ui'
-import { RecipeCard } from '../components/RecipeCard'
+import { Icon, Page, useNavigate } from 'zmp-ui'
+import { RecipeImage } from '../components/RecipeImage'
 import { CATEGORIES, QUICK_MINUTES, RECIPES, searchRecipes, type RecipeCategory } from '../recipes'
 
 export function RecipesPage() {
@@ -10,6 +10,7 @@ export function RecipesPage() {
   const [cat, setCat] = useState<RecipeCategory | 'nhanh' | null>(null)
   const base = cat === 'nhanh' ? RECIPES.filter(r => r.minutes <= QUICK_MINUTES) : cat ? RECIPES.filter(r => r.category === cat) : RECIPES
   const list = searchRecipes(q, base)
+  const navigate = useNavigate()
 
   return (
     <Page className="page">
@@ -31,7 +32,24 @@ export function RecipesPage() {
           </button>
         ))}
       </div>
-      {list.length ? list.map(r => <RecipeCard key={r.slug} recipe={r} />) : <p className="muted">Chưa có món khớp “{q}”. Chị thử từ khác nhé.</p>}
+      {list.length ? (
+        // Lưới ảnh 2 cột (học NYT Cooking / Kitchen Stories): nhìn ảnh chọn món nhanh hơn đọc danh sách.
+        <div className="recipe-grid">
+          {list.map(r => (
+            <button key={r.slug} className="recipe-tile" onClick={() => navigate(`/cong-thuc/${r.slug}`)}>
+              <RecipeImage recipe={r} className="recipe-tile-img" />
+              <span className="recipe-tile-body">
+                <b>{r.title}</b>
+                <span className="muted small">
+                  <Icon icon="zi-clock-1" size={12} /> {r.minutes} phút · {r.level === 'de' ? 'Dễ' : 'Vừa'}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="muted">Chưa có món khớp “{q}”. Chị thử từ khác nhé.</p>
+      )}
       <p className="muted small center">{RECIPES.length} món · Cô Hạ đang soạn thêm món mới mỗi tuần.</p>
     </Page>
   )

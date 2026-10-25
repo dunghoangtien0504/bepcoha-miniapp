@@ -1,6 +1,8 @@
-# Mini App HACO (v4 · bản web)
+# Mini App HACO (v6 · bản web)
 
 Ngôi nhà của khách Bếp Cô Hạ: trang chủ có điểm danh hằng ngày + chuỗi ngày + Hạt Cốm, thư viện công thức (chế độ nấu, Sổ tay), giỏ hàng đặt thẳng vào POScake, khoá "Học làm xôi cốm cùng Cô Hạ", nhập mã đơn, ưu đãi. Thanh dưới 5 tab: Trang chủ · Công thức · Zalo OA · Đặt hàng · Của tôi. Có sự kiện, hộp thư thông báo, danh sách đi chợ, hẹn giờ khi nấu, thêm ra màn hình chính.
+Bản v6 (phản biện khách + CEO, ảnh món, công thức chi tiết, đi chợ cả tuần theo giá Co.opmart): [`../NANG-CAP-v6-PHAN-BIEN.md`](../NANG-CAP-v6-PHAN-BIEN.md).
+Giao diện v5 (thẻ thành viên kiểu Starbucks, lối tắt + banner kiểu McDonald's, dải sản phẩm + thanh giỏ nổi kiểu DoorDash/Luckin, lưới ảnh): [`../NANG-CAP-v5-GIAO-DIEN.md`](../NANG-CAP-v5-GIAO-DIEN.md).
 Nâng cấp v4 (học McDonald's China, Luckin, Starbucks China: hạng thành viên, gợi ý theo bữa, ví ưu đãi, đặt lại 1 chạm, gửi tặng): [`../NANG-CAP-v4-TOP3-FNB.md`](../NANG-CAP-v4-TOP3-FNB.md).
 Thiết kế v3 (cộng đồng, tuân thủ Zalo mục 4.6): [`../THIET-KE-v3-CONG-DONG.md`](../THIET-KE-v3-CONG-DONG.md).
 Nghiên cứu TOP5 và thiết kế v2: [`../NGHIEN-CUU-TOP5-VA-THIET-KE-v2.md`](../NGHIEN-CUU-TOP5-VA-THIET-KE-v2.md).
@@ -16,7 +18,7 @@ Node nằm ở `~/.local/node/bin`; thêm vào PATH nếu Terminal chưa có.
 npm install
 npm run dev:mock    # API giả trong trình duyệt → http://localhost:5173/m/
 npm run dev         # API thật: proxy /api sang Haco-OS-v2 (http://localhost:3030)
-npm test            # 68 test: SĐT, mở bài, chuỗi ngày, công thức, giỏ hàng, đi chợ, hẹn giờ, sự kiện, hạng, bữa, ví, đặt lại, quà tặng, API giả, router
+npm test            # 77 test: SĐT, mở bài, chuỗi ngày, công thức, giỏ hàng, đi chợ, hẹn giờ, sự kiện, hạng, bữa, ví, đặt lại, quà tặng, API giả, router
 npm run build       # bản web → dist/
 npm run copy:haco   # chép dist/ vào Haco-OS-v2/public/m → mở http://localhost:3030/m?b=<MÃ_LÔ>
 npm run build:zalo  # bản Zalo Mini App → www/ (Đợt C, cần Zalo App ID)
