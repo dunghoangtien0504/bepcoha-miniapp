@@ -114,6 +114,8 @@ function load(): MockState {
 }
 const save = (s: MockState) => writeLocal(KEY, JSON.stringify(s))
 const now = () => new Date(Date.now() + Number(readLocal('haco_mock_days') || 0) * 86400000)
+const mockPosts: import('./types').MyPost[] = []
+
 const delay = <T>(v: T) => new Promise<T>(r => setTimeout(() => r(v), 250))
 const publicSession = (s: MockState['session']): Session | null => {
   if (!s) return null
@@ -373,6 +375,34 @@ export function createMockApi(): MiniApi {
       state.readIds = [...new Set([...state.readIds, ...ids])]
       save(state)
       return delay({ unread: MOCK_NOTIFICATIONS.filter(n => !state.readIds.includes(n.id)).length })
+    },
+
+    // Góc bếp: bản giả giữ bài trong bộ nhớ (ảnh là data URL, không ghi localStorage). Mã TEST trong caption → tự duyệt để thử giao diện.
+    async communityPosts() {
+      return delay({ posts: mockPosts.filter(p => p.status === 'da_duyet').map(({ status: _s, reject_reason: _r, ...p }) => p) })
+    },
+
+    async myPosts() {
+      requireSession(load())
+      return delay({ posts: mockPosts })
+    },
+
+    async createPost(req) {
+      requireSession(load())
+      if (!req.consent) throw new ApiError(400, 'bad_request', 'Chị tick đồng ý để Bếp được đăng ảnh giúp Cô nhé.')
+      if (!/^data:image\/(jpeg|png|webp);base64,/.test(req.image)) throw new ApiError(400, 'bad_request', 'Ảnh chưa đúng định dạng (JPG, PNG hoặc WebP).')
+      if (req.caption.trim().length < 2) throw new ApiError(400, 'bad_request', 'Chị viết vài chữ giới thiệu món giúp Cô nhé.')
+      if (mockPosts.filter(p => Date.now() - Date.parse(p.created_at) < 86400000).length >= 3) {
+        throw new ApiError(429, 'post_limit', 'Hôm nay chị đã gửi đủ ảnh rồi, Cô duyệt xong chị gửi tiếp nhé.')
+      }
+      const approved = /TEST/.test(req.caption)
+      const post = {
+        id: mockPosts.length + 1, caption: req.caption.trim(), display_name: req.display_name?.trim() || 'Chị em Bếp Cô Hạ', area: req.area?.trim() || '',
+        recipe_slug: req.recipe_slug ?? null, praised: approved, pinned: false, created_at: now().toISOString(), image_url: req.image,
+        status: approved ? ('da_duyet' as const) : ('cho_duyet' as const), reject_reason: '',
+      }
+      mockPosts.unshift(post)
+      return delay({ post: { id: post.id, status: post.status, created_at: post.created_at } })
     },
 
     async lessonProgress(no, watchedPct) {

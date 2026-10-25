@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button, Icon, Page, useNavigate, useSnackbar } from 'zmp-ui'
-import { useCart } from '../cart'
 import { BackBar } from '../components/BackBar'
 import { CookTimer, useCookTimer } from '../components/CookTimer'
+import { OABar } from '../components/OABar'
+import { ProductTips } from '../components/ProductTips'
 import { RecipeImage } from '../components/RecipeImage'
-import { siteUrl } from '../content'
 import { minutesLabel } from '../lib/timer'
-import { IS_ZALO, platform } from '../platform'
+import { platform } from '../platform'
 import { PHASES, findRecipe, type Step } from '../recipes'
 import { useShopping } from '../shopping'
 import { useMini } from '../state'
@@ -23,7 +23,6 @@ export function RecipePage() {
   const { session, me, api, refreshMe, track } = useMini()
   const navigate = useNavigate()
   const { openSnackbar } = useSnackbar()
-  const cart = useCart()
   const shopping = useShopping()
   const timer = useCookTimer()
   const [cooking, setCooking] = useState(false)
@@ -66,21 +65,6 @@ export function RecipePage() {
     } catch {
       openSnackbar({ type: 'error', text: 'Chưa lưu được, chị thử lại nhé', duration: 2500 })
     }
-  }
-
-  const openProduct = () => {
-    if (!recipe.product) return
-    track('product_click', { slug, product: recipe.product.href })
-    void platform.openExternal(siteUrl(recipe.product.href))
-  }
-
-  // "Mua đủ nguyên liệu": bỏ sản phẩm của món vào giỏ rồi mở giỏ (v2-B).
-  const productItem = recipe.product ? cart.item(recipe.product.sku) : undefined
-  const buyProduct = () => {
-    if (!productItem) return
-    cart.add(productItem.sku)
-    track('cart_add', { sku: productItem.sku, from: 'recipe', slug })
-    navigate('/gio-hang')
   }
 
   const inShopping = shopping.items.some(i => i.slug === slug)
@@ -158,7 +142,7 @@ export function RecipePage() {
       {/* Ảnh CC phải ghi tác giả và giấy phép. Chỉ ghi chữ, không gắn link (Zalo mục 4.1 cấm đưa khách ra link ngoài). */}
       {recipe.imageCredit && (
         <p className="img-credit">
-          Ảnh minh hoạ: {recipe.imageCredit.author} · {recipe.imageCredit.license} · Wikimedia Commons
+          Ảnh minh hoạ: {recipe.imageCredit.author} · {recipe.imageCredit.license} · {recipe.imageCredit.source ?? 'Wikimedia Commons'}
         </p>
       )}
       <h2>{recipe.title}</h2>
@@ -191,35 +175,7 @@ export function RecipePage() {
         {inShopping ? '✓ Đã có trong danh sách đi chợ — xem' : '🛒 Thêm vào danh sách đi chợ'}
       </Button>
 
-      {recipe.product && (
-        <div className="card card-product">
-          <div className="small">Món này dùng</div>
-          <b>{recipe.product.name}</b>
-          {/* Bản Zalo không mở trang web sản phẩm (mục 4.1), chỉ thêm vào giỏ trong app. */}
-          {productItem ? (
-            IS_ZALO ? (
-              <Button size="small" onClick={buyProduct}>
-                Thêm vào giỏ
-              </Button>
-            ) : (
-              <div className="two-choices">
-                <Button size="small" variant="secondary" onClick={openProduct}>
-                  Xem sản phẩm
-                </Button>
-                <Button size="small" onClick={buyProduct}>
-                  Thêm vào giỏ
-                </Button>
-              </div>
-            )
-          ) : (
-            !IS_ZALO && (
-              <Button size="small" onClick={openProduct}>
-                Xem và đặt mua
-              </Button>
-            )
-          )}
-        </div>
-      )}
+      {recipe.source === 'nhan' && <p className="source-note">✓ Công thức in trên bao bì sản phẩm Bếp Cô Hạ</p>}
 
       {PHASES.map(p => {
         const steps = recipe.steps.map((s, idx) => ({ s, idx })).filter(x => x.s.phase === p.key)
@@ -253,6 +209,8 @@ export function RecipePage() {
         </Button>
       )}
 
+      <ProductTips uses={recipe.uses ?? []} from={`recipe:${slug}`} />
+
       {recipe.tips && (
         <>
           <h3>Bí quyết</h3>
@@ -273,6 +231,12 @@ export function RecipePage() {
           </ul>
         </>
       )}
+
+      <div className="card ask-co">
+        <b>Làm chưa được? Hỏi Cô Hạ</b>
+        <span className="small muted">Chụp ảnh món, nhắn Bếp — Cô chỉ cách sửa ngay.</span>
+        <OABar from={`recipe:${slug}`} message={`Cô ơi, cháu đang làm món ${recipe.title} ạ`} compact />
+      </div>
 
       <div className="sticky-cta">
         <Button

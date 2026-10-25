@@ -4,13 +4,14 @@ import { AddToHomeCard } from '../components/AddToHomeCard'
 import { BannerCarousel } from '../components/BannerCarousel'
 import { Glyph, type GlyphName } from '../components/Glyph'
 import { MemberCard } from '../components/MemberCard'
+import { OABar } from '../components/OABar'
 import { OAFollowCard } from '../components/OAFollowCard'
 import { ProductRail, RecipeRail } from '../components/Rails'
 import { RecipeCard } from '../components/RecipeCard'
 import { ReorderCard } from '../components/Reorder'
 import { UpcomingEvent } from '../components/UpcomingEvent'
 import { WalletCard } from '../components/WalletCard'
-import { BRAND, COURSE_READY, LINKS } from '../content'
+import { BRAND, COMMUNITY, COURSE_READY, LINKS } from '../content'
 import { daypart, pickManyForDaypart, vnHour } from '../lib/daypart'
 import { money } from '../lib/format'
 import { vnDay } from '../lib/streak'
@@ -18,7 +19,9 @@ import { IS_ZALO, platform } from '../platform'
 import { RECIPES, recipeOfTheDay } from '../recipes'
 import { useShopping } from '../shopping'
 import { useMini } from '../state'
-import { weekTotals } from '../weekly'
+import { MENUS, menuRecipes, perMeal, shopList } from '../weekly'
+import { tipOfTheDay } from '../tips'
+import { TipCard } from './Tips'
 
 type Tile = { glyph: GlyphName; label: string; badge?: number; go: () => void }
 
@@ -37,7 +40,8 @@ export function HomePage() {
   const forMeal = pickManyForDaypart(RECIPES, part.key, day, 12, [today.slug])
     .sort((a, b) => Number(!!b.image) - Number(!!a.image))
     .slice(0, 6)
-  const week = weekTotals()
+  const weekPerMeal = perMeal(shopList(menuRecipes(MENUS[0]), 4, 7))
+  const tip = tipOfTheDay(day)
 
   const hasSession = !!session
   useEffect(() => {
@@ -56,10 +60,12 @@ export function HomePage() {
   const primary: Tile[] = [
     { glyph: 'bag', label: 'Đặt hàng', go: () => navigate('/dat-hang') },
     { glyph: 'book', label: 'Công thức', go: () => navigate('/cong-thuc') },
+    { glyph: 'bulb', label: 'Mẹo vặt', go: () => navigate('/meo-vat') },
     { glyph: 'list', label: 'Đi chợ tuần', go: () => navigate('/di-cho-tuan') },
-    { glyph: 'bookmark', label: 'Sổ tay', go: () => navigate('/so-tay') },
+    { glyph: 'group', label: 'Cộng đồng', go: () => navigate('/cong-dong') },
   ]
   const more: Tile[] = [
+    { glyph: 'bookmark', label: 'Sổ tay', go: () => navigate('/so-tay') },
     { glyph: 'list', label: 'Danh sách đi chợ', badge: shopping.remaining, go: () => navigate('/di-cho') },
     { glyph: 'calendar', label: 'Sự kiện', go: () => navigate('/su-kien') },
     { glyph: 'gift', label: 'Hạt Cốm', go: () => navigate('/hat-com') },
@@ -69,7 +75,7 @@ export function HomePage() {
       ? [
           {
             glyph: 'group' as const,
-            label: 'Nhóm Zalo của Cô',
+            label: LINKS.zaloGroup ? 'Nhóm Zalo của Cô' : 'Nhóm Facebook của Cô',
             go: () => {
               track('group_click', { zalo: !!LINKS.zaloGroup })
               void platform.openExternal(groupUrl)
@@ -97,6 +103,8 @@ export function HomePage() {
         <Icon icon="zi-search" size={18} />
         <span>Tìm món, nguyên liệu…</span>
       </button>
+
+      <OABar from="home" />
 
       <MemberCard />
 
@@ -138,8 +146,24 @@ export function HomePage() {
         <span className="week-promo-text">
           <b>Bận rộn? Đi chợ 1 lần cho cả tuần</b>
           <span className="small">
-            7 bữa tối cho 4 người · khoảng {money(week.perMeal)}/bữa theo giá Co.opmart
+            3 thực đơn hoặc tự chọn món · khoảng {money(weekPerMeal)}/bữa cho 4 người (giá Co.opmart)
           </span>
+        </span>
+        <span className="see-all">›</span>
+      </button>
+
+      <div className="section-head">
+        <span className="section-title">Mẹo vặt hôm nay</span>
+        <button className="see-all" onClick={() => navigate('/meo-vat')}>
+          Xem tất cả ›
+        </button>
+      </div>
+      <TipCard tip={tip} from="home_tip" />
+
+      <button className="card community-promo" onClick={() => navigate('/cong-dong')}>
+        <span className="community-promo-text">
+          <b>Góc bếp chị em</b>
+          <span className="small">Đăng ảnh món mình nấu, được Cô Hạ khen. {COMMUNITY.challenge.title}.</span>
         </span>
         <span className="see-all">›</span>
       </button>

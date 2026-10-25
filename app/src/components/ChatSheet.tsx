@@ -1,14 +1,15 @@
 import { Sheet } from 'zmp-ui'
 import { LINKS } from '../content'
-import { platform } from '../platform'
+import { IS_ZALO, platform } from '../platform'
 import { useMini } from '../state'
 
 /** Các kênh chat với Cô Hạ đang có (Zalo OA ưu tiên, rồi Messenger). Rỗng thì ẩn mọi nút chat. */
 export function chatOptions() {
   return [
     LINKS.oaId ? { key: 'zalo', label: 'Nhắn Zalo cho Cô Hạ', go: () => platform.openChat({ kind: 'zalo_oa', oaId: LINKS.oaId }) } : null,
-    LINKS.zaloChat && !LINKS.oaId ? { key: 'zalo', label: 'Nhắn Zalo cho Cô Hạ', go: () => platform.openChat({ kind: 'url', url: LINKS.zaloChat }) } : null,
-    LINKS.messenger ? { key: 'messenger', label: 'Nhắn Messenger', go: () => platform.openChat({ kind: 'url', url: LINKS.messenger }) } : null,
+    // Bản Zalo chỉ chat qua OA (chính sách Zalo Mini App mục 4.1: không đưa khách ra link ngoài).
+    LINKS.zaloChat && !LINKS.oaId && !IS_ZALO ? { key: 'zalo', label: 'Nhắn Zalo cho Cô Hạ', go: () => platform.openChat({ kind: 'url', url: LINKS.zaloChat }) } : null,
+    LINKS.messenger && !IS_ZALO ? { key: 'messenger', label: 'Nhắn Messenger', go: () => platform.openChat({ kind: 'url', url: LINKS.messenger }) } : null,
   ].filter((o): o is NonNullable<typeof o> => o !== null)
 }
 

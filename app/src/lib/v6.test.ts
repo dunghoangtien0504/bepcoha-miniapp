@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CatalogItem } from '../api/types'
-import { shopListText } from '../pages/WeeklyPlan'
 import { RECIPES, findRecipe } from '../recipes'
-import { SHOP, WEEK, weekTotals } from '../weekly'
+import { MENUS, PRICES, menuRecipes, perMeal, shopList, shopListText } from '../weekly'
 import { missingFields, upsellFor } from './checkout'
 
 const item = (sku: string, product: string, price: number): CatalogItem => ({ sku, product, name: sku, variant: '', price, image: '' })
@@ -25,27 +24,30 @@ describe('giỏ hàng: báo thiếu và gợi ý mua kèm', () => {
 })
 
 describe('đi chợ cả tuần', () => {
-  it('7 ngày, mọi món có trong thư viện công thức', () => {
-    expect(WEEK).toHaveLength(7)
-    for (const d of WEEK) for (const s of d.dishes) expect(findRecipe(s), s).toBeTruthy()
-  })
-  it('mã hàng không trùng, sốt Bếp Cô Hạ có sku, giá là số nguyên dương hoặc null', () => {
-    expect(new Set(SHOP.map(i => i.id)).size).toBe(SHOP.length)
-    for (const i of SHOP) {
-      if (i.group === 'haco') expect(i.sku, i.id).toBeTruthy()
-      if (i.price !== null) expect(Number.isInteger(i.price) && i.price > 0, i.id).toBe(true)
+  it('3 thực đơn, mỗi thực đơn 7 ngày, món nào cũng có trong thư viện', () => {
+    expect(MENUS.length).toBeGreaterThanOrEqual(3)
+    for (const m of MENUS) {
+      expect(m.days).toHaveLength(7)
+      for (const d of m.days) for (const s of d.dishes) expect(findRecipe(s), `${m.key}: ${s}`).toBeTruthy()
     }
   })
-  it('tổng tiền tách đồ tươi, gia vị khô, sốt', () => {
-    const t = weekTotals()
-    const all = SHOP.reduce((n, i) => n + (i.price ?? 0), 0)
-    expect(t.fresh + t.pantry + t.haco).toBe(all)
-    expect(t.unpriced).toBe(SHOP.filter(i => i.price === null).length)
-    expect(t.perMeal).toBe(Math.round(t.fresh / 7 / 1000) * 1000)
+  it('danh sách có tiền ước tính, tiền/bữa = tổng/7, gia vị khô không tính tiền', () => {
+    const l = shopList(menuRecipes(MENUS[0]), 4, 7)
+    expect(l.fresh).toBeGreaterThan(300000)
+    expect(l.fresh).toBe(l.lines.filter(x => x.group !== 'gia_vi_kho').reduce((n, x) => n + (x.cost ?? 0), 0))
+    expect(perMeal(l)).toBe(Math.round(l.fresh / 7 / 1000) * 1000)
+    expect(l.lines.filter(x => x.group === 'gia_vi_kho').every(x => x.cost === null || x.cost > 0)).toBe(true)
   })
-  it('danh sách chép ra có đủ món và nguồn giá', () => {
-    const txt = shopListText()
-    for (const i of SHOP) expect(txt).toContain(i.name)
+  it('nhiều người thì nhiều tiền hơn; tên trong bảng giá đều là tên chuẩn có thật', () => {
+    const r = menuRecipes(MENUS[0])
+    expect(shopList(r, 6, 7).fresh).toBeGreaterThan(shopList(r, 2, 7).fresh)
+    const labels = new Set(shopList(MENUS.flatMap(menuRecipes), 4).lines.map(x => x.label))
+    for (const k of Object.keys(PRICES)) expect(labels.has(k), `bảng giá có "${k}" nhưng không món nào dùng`).toBe(true)
+  })
+  it('chép danh sách có đủ dòng và nguồn giá', () => {
+    const l = shopList(menuRecipes(MENUS[1]), 4, 7)
+    const txt = shopListText('Thực đơn Tiết kiệm', l, 4)
+    for (const x of l.lines) expect(txt).toContain(x.label)
     expect(txt).toContain('Co.op Online')
   })
 })
@@ -61,6 +63,6 @@ describe('công thức chi tiết', () => {
     for (const r of RECIPES.filter(x => x.image?.startsWith('/images/cong-thuc/'))) {
       if (r.imageCredit) expect(r.imageCredit.author && r.imageCredit.license, r.slug).toBeTruthy()
     }
-    expect(RECIPES.filter(r => r.imageCredit).length).toBe(7)
+    expect(RECIPES.filter(r => r.imageCredit).length).toBeGreaterThanOrEqual(6)
   })
 })

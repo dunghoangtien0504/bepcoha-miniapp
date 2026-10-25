@@ -26,19 +26,21 @@ import { RecipesPage } from './pages/Recipes'
 import { ShopPage } from './pages/Shop'
 import { WelcomePage } from './pages/Welcome'
 import { WeeklyPlanPage } from './pages/WeeklyPlan'
+import { TipsPage } from './pages/Tips'
+import { CommunityPage } from './pages/Community'
 import { MiniProvider, useMini } from './state'
 
 // Thanh dưới 5 tab (học Mini App của group học): Trang chủ · Công thức · Zalo OA · Đặt hàng · Của tôi.
 const TABS: { key: string; path: string | null; label: string; icon: string }[] = [
   { key: 'home', path: '/', label: 'Trang chủ', icon: 'zi-home' },
   { key: 'recipes', path: '/cong-thuc', label: 'Công thức', icon: 'zi-note' },
-  { key: 'oa', path: null, label: 'Zalo OA', icon: 'zi-chat' },
+  { key: 'oa', path: null, label: 'Chat Bếp', icon: 'zi-chat' },
   { key: 'shop', path: '/dat-hang', label: 'Đặt hàng', icon: 'zi-list-1' },
   { key: 'me', path: '/cua-toi', label: 'Của tôi', icon: 'zi-user' },
 ]
 
 function activeTab(pathname: string): string {
-  if (pathname.startsWith('/cong-thuc') || pathname.startsWith('/so-tay') || pathname.startsWith('/di-cho')) return 'recipes'
+  if (pathname.startsWith('/cong-thuc') || pathname.startsWith('/meo-vat') || pathname.startsWith('/so-tay') || pathname.startsWith('/di-cho')) return 'recipes'
   if (pathname.startsWith('/dat-hang') || pathname.startsWith('/gio-hang') || pathname.startsWith('/don-hang')) return 'shop'
   if (pathname.startsWith('/cua-toi') || pathname.startsWith('/hat-com') || pathname.startsWith('/nhap-ma-don')) return 'me'
   return 'home'
@@ -68,6 +70,8 @@ function Shell() {
         <Route path="/so-tay" element={<NotebookPage />} />
         <Route path="/di-cho" element={<ShoppingPage />} />
         <Route path="/di-cho-tuan" element={<WeeklyPlanPage />} />
+        <Route path="/meo-vat" element={<TipsPage />} />
+        <Route path="/cong-dong" element={<CommunityPage />} />
         <Route path="/su-kien" element={<EventsPage />} />
         <Route path="/su-kien/:slug" element={<EventDetailPage />} />
         <Route path="/thong-bao" element={<NotificationsPage />} />

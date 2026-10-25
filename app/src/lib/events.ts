@@ -44,6 +44,11 @@ export type EventName =
   | 'week_plan_view'
   | 'week_plan_share'
   | 'upsell_add'
+  | 'tips_view'
+  | 'community_view'
+  | 'community_send'
+  | 'community_feed'
+  | 'community_post'
 
 const STEP: Record<EventName, number> = {
   checkin: 6,
@@ -73,6 +78,11 @@ const STEP: Record<EventName, number> = {
   week_plan_view: 5,
   week_plan_share: 9,
   upsell_add: 7,
+  tips_view: 5,
+  community_view: 6,
+  community_send: 6,
+  community_feed: 9,
+  community_post: 6,
   welcome_view: 3,
   identify_submit: 4,
   oa_follow_click: 4,

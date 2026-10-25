@@ -58,5 +58,8 @@ export function createHttpApi(opts: { base?: string; getToken?: () => string | n
     remindEvent: (slug, kind, on) => call('POST', `/api/mini/events/${encodeURIComponent(slug)}/remind`, { kind, on }),
     notifications: () => call('GET', '/api/mini/notifications'),
     readNotifications: req => call('POST', '/api/mini/notifications/read', req),
+    communityPosts: () => call('GET', '/api/mini/community/posts'),
+    myPosts: () => call('GET', '/api/mini/community/mine'),
+    createPost: req => call('POST', '/api/mini/community/posts', req),
   }
 }

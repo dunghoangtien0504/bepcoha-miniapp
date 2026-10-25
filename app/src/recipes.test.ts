@@ -39,7 +39,7 @@ describe('thư viện công thức', () => {
   })
   it('tìm không dấu theo tên món và nguyên liệu', () => {
     expect(searchRecipes('xa xiu').map(r => r.slug)).toContain('thit-xa-xiu')
-    expect(searchRecipes('dau xanh').map(r => r.slug)).toEqual(expect.arrayContaining(['xoi-com-sen-dua', 'xoi-dau-xanh', 'che-dau-xanh-cot-dua']))
+    expect(searchRecipes('dau phu').map(r => r.slug)).toEqual(expect.arrayContaining(['dau-phu-sot-ca-chua', 'dau-phu-chien-sa-ot']))
     expect(searchRecipes('trung').map(r => r.slug)).toContain('thit-kho-trung')
     expect(searchRecipes('').length).toBe(RECIPES.length)
   })

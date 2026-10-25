@@ -3,6 +3,9 @@ import { Button, Icon, Page, useSnackbar } from 'zmp-ui'
 import type { CatalogItem } from '../api/types'
 import { useCart } from '../cart'
 import { productGroups } from '../components/Rails'
+import { BuyButton, ProductImage, RecipesOf } from '../components/ProductTips'
+import { PRODUCTS } from '../products'
+import { findRecipe } from '../recipes'
 import { LINKS, asset } from '../content'
 import { money } from '../lib/format'
 import { platform } from '../platform'
@@ -73,6 +76,25 @@ export function ShopPage() {
       <div className="shop-grid">
         {shown.map(variants => (
           <ProductCard key={variants[0].product} variants={variants} />
+        ))}
+      </div>
+      {/* Sản phẩm bán chạy chưa có trong giỏ hàng app: đặt qua chat Zalo với Bếp (không mở trang ngoài — Zalo 4.1). */}
+      <h3>Sản phẩm khác của Bếp</h3>
+      <p className="muted small">Nhắn Bếp để đặt, Cô gọi xác nhận và báo phí ship.</p>
+      <div className="more-products">
+        {PRODUCTS.filter(p => !p.sku || !cart.item(p.sku)).map(p => (
+          <div key={p.key} className="more-product">
+            <ProductImage product={p} className="more-product-img" />
+            <div className="more-product-body">
+              <b>{p.name}</b>
+              <span className="small">{p.benefit}</span>
+              {p.recipes && <RecipesOf slugs={p.recipes} find={findRecipe} />}
+              <div className="ptip-foot">
+                <span className="ptip-price">{p.price}</span>
+                <BuyButton product={p} from="shop_more" />
+              </div>
+            </div>
+          </div>
         ))}
       </div>
       <p className="muted small center">Giá chưa gồm phí ship. Cô Hạ gọi xác nhận và báo phí ship.</p>

@@ -234,6 +234,37 @@ export interface NotificationsRes {
   unread: number
 }
 
+// ── v8: Góc bếp chị em (khách đăng ảnh + caption, Bếp duyệt rồi mới hiện; không tim, không bình luận — Zalo 4.6) ──
+
+export interface CommunityPost {
+  id: number
+  caption: string
+  display_name: string
+  area: string
+  recipe_slug: string | null
+  praised: boolean
+  pinned: boolean
+  created_at: string
+  /** Đường dẫn ảnh trên Haco-OS (bản giả: data URL). */
+  image_url: string
+}
+
+export interface MyPost extends CommunityPost {
+  status: 'cho_duyet' | 'da_duyet' | 'tu_choi' | 'an'
+  reject_reason: string
+}
+
+export interface CreatePostReq {
+  /** data:image/jpeg;base64,… đã nén ở máy (≤ 1280px, ≤ 800KB). */
+  image: string
+  caption: string
+  display_name?: string
+  area?: string
+  recipe_slug?: string | null
+  /** Đồng ý cho Bếp đăng ảnh — bắt buộc true, ô không tick sẵn. */
+  consent: boolean
+}
+
 export interface MiniApi {
   session(req: { anon_id: string; batch?: string; ref?: string }): Promise<SessionRes>
   events(req: { anon_id: string; events: FunnelEvent[] }): Promise<void>
@@ -254,6 +285,9 @@ export interface MiniApi {
   remindEvent(slug: string, kind: 'nhac' | 'giu_cho', on: boolean): Promise<{ event: MiniEvent }>
   notifications(): Promise<NotificationsRes>
   readNotifications(req: { ids: number[] } | { all: true }): Promise<{ unread: number }>
+  communityPosts(): Promise<{ posts: CommunityPost[] }>
+  myPosts(): Promise<{ posts: MyPost[] }>
+  createPost(req: CreatePostReq): Promise<{ post: { id: number; status: MyPost['status']; created_at: string } }>
 }
 
 /** Lỗi API: `code` là mã máy (snake_case), `message` là câu tiếng Việt hiện cho khách. */

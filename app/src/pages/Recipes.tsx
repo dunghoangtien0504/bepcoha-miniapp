@@ -19,6 +19,10 @@ export function RecipesPage() {
         <Icon icon="zi-search" size={18} />
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Tìm món, nguyên liệu…" aria-label="Tìm công thức" />
       </div>
+      <button className="card tips-entry" onClick={() => navigate('/meo-vat')}>
+        <b>💡 Mẹo vặt nấu ăn</b>
+        <span className="small muted">Khử tanh, giữ rau xanh, xôi không dính… ›</span>
+      </button>
       <div className="chips">
         <button className={`chip ${cat === null ? 'on' : ''}`} onClick={() => setCat(null)}>
           Tất cả
@@ -26,7 +30,7 @@ export function RecipesPage() {
         <button className={`chip ${cat === 'nhanh' ? 'on' : ''}`} onClick={() => setCat('nhanh')}>
           ⏱ Dưới {QUICK_MINUTES} phút
         </button>
-        {CATEGORIES.map(c => (
+        {CATEGORIES.filter(c => RECIPES.some(r => r.category === c.key)).map(c => (
           <button key={c.key} className={`chip ${cat === c.key ? 'on' : ''}`} onClick={() => setCat(c.key)}>
             {c.emoji} {c.label}
           </button>
@@ -50,7 +54,7 @@ export function RecipesPage() {
       ) : (
         <p className="muted">Chưa có món khớp “{q}”. Chị thử từ khác nhé.</p>
       )}
-      <p className="muted small center">{RECIPES.length} món · Cô Hạ đang soạn thêm món mới mỗi tuần.</p>
+      <p className="muted small center">{RECIPES.length} món cơm nhà. Xôi, chè, bánh khúc, gà ủ muối… có sét nguyên liệu kèm hướng dẫn ở tab Đặt hàng.</p>
     </Page>
   )
 }

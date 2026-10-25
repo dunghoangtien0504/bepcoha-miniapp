@@ -42,7 +42,8 @@ export const CONSENT = {
 
 export const LINKS = {
   messenger: import.meta.env.VITE_MESSENGER_URL || '',
-  zaloChat: import.meta.env.VITE_ZALO_CHAT_URL || '',
+  // Zalo của Bếp (số in trên nhãn sản phẩm và trang Set xôi cốm). Bản Zalo không dùng link này, chỉ dùng OA.
+  zaloChat: import.meta.env.VITE_ZALO_CHAT_URL || 'https://zalo.me/0965240587',
   combo: import.meta.env.VITE_COMBO_URL || '',
   publicUrl: import.meta.env.VITE_PUBLIC_URL || '',
   oaId: import.meta.env.VITE_ZALO_OA_ID || '',
@@ -86,10 +87,34 @@ export const BANNERS = [
   {
     title: 'Cơm nhà mỗi ngày',
     subtitle: 'Công thức từng bước, có hẹn giờ khi nấu',
-    image: '/images/cong-thuc/ca-kho-to.jpg',
+    image: '/images/cong-thuc/thit-kho-trung.jpg',
     to: '/cong-thuc',
   },
 ]
 
 /** Khoá học chỉ hiện khi đã có ít nhất 1 video bài học (phản biện CEO: đừng dẫn khách vào khoá rỗng). */
 export const COURSE_READY = LESSONS.some(l => !!l.videoUrl)
+
+/**
+ * Cộng đồng "Góc bếp chị em" (v7). Theo chính sách Zalo Mini App mục 4.6: KHÔNG có đăng bài, thả tim, bình luận trong app.
+ * Khách gửi ảnh cho Bếp qua chat OA → nhân viên chọn ảnh, xin phép, rồi thêm vào GALLERY dưới đây (ảnh để ở Haco-OS public/images/cong-dong).
+ * Trò chuyện sôi nổi diễn ra trong Nhóm Zalo của Cô và Nhật ký Zalo (nơi Zalo cho phép).
+ */
+export const COMMUNITY = {
+  challenge: {
+    title: 'Thử thách tuần: Thịt kho trứng',
+    body: 'Tuần này cùng nấu thịt kho trứng nước dừa. Đăng ảnh nồi thịt kho của chị — Cô chọn những nồi đẹp nhất để khen và ghim lên đầu Góc bếp.',
+    recipe: 'thit-kho-trung',
+  },
+  /** Ảnh đã được duyệt. `by` để trống thì ghi "Lớp học của Bếp Cô Hạ". */
+  gallery: [
+    { image: '/images/cong-dong/lop-104.jpg', caption: 'Xôi ngũ sắc', by: '' },
+    { image: '/images/cong-dong/lop-142.jpg', caption: 'Mẹt xôi lá chuối', by: '' },
+    { image: '/images/cong-dong/lop-131.jpg', caption: 'Xôi màu', by: '' },
+    { image: '/images/cong-dong/lop-206.jpg', caption: 'Bánh khúc nhân đỗ thịt', by: '' },
+    { image: '/images/cong-dong/lop-10.jpg', caption: 'Chè caramen dừa', by: '' },
+    { image: '/images/cong-dong/lop-26.jpg', caption: 'Chè thập cẩm', by: '' },
+    { image: '/images/cong-dong/lop-22.jpg', caption: 'Chè khoai dẻo', by: '' },
+    { image: '/images/cong-dong/lop-61.jpg', caption: 'Chè nhiều vị', by: '' },
+  ] as { image: string; caption: string; by: string }[],
+}

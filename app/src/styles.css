@@ -619,3 +619,83 @@ body.cooking .cart-bar { display: none; }
 .upsell-text { display: grid; gap: 2px; flex: 1; min-width: 0; font-size: 14px; }
 .upsell-row .add-btn { font-size: 20px; font-weight: 700; line-height: 1; }
 .hint { margin: 8px 0; padding: 8px 10px; border-radius: 10px; background: var(--haco-gold-soft); color: var(--haco-gold-ink); font-size: 14px; }
+
+/* ── v7 (NANG-CAP-v7-OA-MEOVAT-CONGDONG.md): OA, sản phẩm trong công thức, mẹo vặt, cộng đồng ── */
+.oa-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 12px; }
+.oa-bar.compact { margin: 8px 0 0; }
+.oa-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 10px; border-radius: 12px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.oa-follow { border: 1.5px solid #0068ff; background: #fff; color: #0068ff; }
+.oa-chat { border: 0; background: #0068ff; color: #fff; }
+.quick { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.quick-icon { width: 44px; height: 44px; }
+.quick-item { font-size: 12px; }
+.quick-item:nth-child(5) .quick-icon { background: #f3e8f9; color: #7b3fa0; }
+.source-note { display: inline-block; margin: 4px 0; padding: 3px 8px; border-radius: 8px; background: var(--haco-green-soft); color: var(--haco-green-dark); font-size: 12px; font-weight: 600; }
+.ptips h3 { margin-top: 22px; }
+.ptip { display: flex; gap: 10px; padding: 10px; margin: 8px 0; background: #fff; border: 1px solid var(--haco-gold); border-radius: 14px; }
+.ptip-img, .more-product-img, .tip-product-img { width: 76px; height: 76px; flex-shrink: 0; object-fit: cover; border-radius: 10px; background: var(--haco-gold-soft); }
+.pt-ph { display: grid; place-items: center; font-size: 34px; }
+.ptip-body, .more-product-body { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.ptip-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 2px; }
+.ptip-price { font-weight: 700; color: var(--haco-green-dark); font-size: 14px; }
+.pt-btn { flex-shrink: 0; padding: 7px 12px; border: 0; border-radius: 999px; background: var(--haco-green); color: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.pt-btn.pt-chat { background: #0068ff; }
+.ask-co { display: grid; gap: 4px; border-color: #b9d3f5; background: #f3f8ff; }
+.tip-card { display: grid; gap: 6px; border-left: 4px solid var(--haco-gold); }
+.tip-card b { color: var(--haco-green-dark); }
+.tip-actions { display: grid; gap: 8px; }
+.tip-product { display: flex; align-items: center; gap: 8px; }
+.tip-product .tip-product-img { width: 40px; height: 40px; border-radius: 8px; }
+.tip-product .small { flex: 1; min-width: 0; }
+.tips-entry { display: grid; gap: 2px; width: 100%; font: inherit; text-align: left; cursor: pointer; border-color: var(--haco-gold); background: var(--haco-gold-soft); margin-top: 0; }
+.community-promo { display: flex; align-items: center; gap: 10px; width: 100%; font: inherit; text-align: left; cursor: pointer; border-color: #d9c2ea; background: #f8f1fc; }
+.community-promo-text { display: grid; gap: 2px; flex: 1; color: var(--haco-ink); }
+.challenge { display: grid; gap: 10px; padding: 0; overflow: hidden; border-color: var(--haco-red); }
+.challenge-img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+.challenge-img.recipe-ph { display: grid; place-items: center; }
+.challenge-body { display: grid; gap: 6px; padding: 0 14px 14px; }
+.challenge-body .badge { justify-self: start; margin: 0; }
+.gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.gallery-item { margin: 0; background: #fff; border: 1px solid var(--haco-line); border-radius: 12px; overflow: hidden; }
+.gallery-item img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+.gallery-item figcaption { display: grid; gap: 1px; padding: 6px 8px 8px; font-size: 13px; }
+.gallery-item figcaption span { color: var(--haco-muted); font-size: 12px; }
+.more-products { display: grid; gap: 8px; margin-bottom: 14px; }
+.more-product { display: flex; gap: 10px; padding: 10px; background: #fff; border: 1px solid var(--haco-line); border-radius: 14px; }
+/* v8: đi chợ tuần tự chọn món */
+.seg4 { grid-template-columns: repeat(4, 1fr); }
+.seg4 button { font-size: 12px; padding: 9px 2px; }
+.people-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.people-row .chip { padding: 4px 12px; }
+.week-day-name { font-size: 16px; color: var(--haco-green-dark); }
+.pick-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+.pick-item { position: relative; display: grid; gap: 4px; padding: 0 0 10px; overflow: hidden; background: #fff; border: 2px solid var(--haco-line); border-radius: 14px; font: inherit; text-align: left; color: inherit; cursor: pointer; }
+.pick-item.on { border-color: var(--haco-green); background: #f3faf5; }
+.pick-img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: #ece6d4; }
+.pick-img.recipe-ph { display: grid; place-items: center; }
+.pick-check { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: #fff; color: var(--haco-green); font-weight: 800; box-shadow: 0 1px 4px rgb(0 0 0 / 20%); }
+.pick-item.on .pick-check { background: var(--haco-green); color: #fff; }
+.pick-name, .pick-item .small { padding: 0 10px; }
+.pick-name { font-weight: 700; font-size: 14px; line-height: 1.3; }
+.list-for { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: var(--haco-gold-soft); }
+/* v8: Góc bếp — đăng ảnh, bài của tôi, bài đã duyệt */
+.composer { display: grid; gap: 10px; border-color: var(--haco-green-2); }
+.composer-pick { display: grid; justify-items: center; gap: 4px; padding: 22px 12px; border: 2px dashed var(--haco-green-2); border-radius: 14px; background: #f6fbf7; font: inherit; color: var(--haco-green-dark); cursor: pointer; }
+.composer-pick-icon { font-size: 34px; }
+.composer-preview { display: grid; gap: 4px; justify-items: start; }
+.composer-preview img { width: 100%; max-height: 320px; object-fit: cover; border-radius: 12px; }
+.composer-select { display: block; width: 100%; margin-top: 4px; padding: 10px; border: 1px solid var(--haco-line); border-radius: 10px; background: #fff; font: inherit; }
+.consent-row { align-items: flex-start; }
+.my-posts { display: grid; gap: 8px; margin-bottom: 12px; }
+.my-post { display: flex; gap: 10px; padding: 8px; background: #fff; border: 1px solid var(--haco-line); border-radius: 12px; }
+.my-post-img { width: 64px; height: 64px; flex-shrink: 0; object-fit: cover; border-radius: 8px; }
+.my-post-body { display: grid; gap: 3px; min-width: 0; }
+.my-post-body .badge { justify-self: start; margin: 0; }
+.badge-warn { background: #fde8e4; color: var(--haco-red); }
+.feed { display: grid; gap: 12px; }
+.feed-item { overflow: hidden; background: #fff; border: 1px solid var(--haco-line); border-radius: 14px; }
+.feed-item img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; }
+.feed-body { display: grid; gap: 4px; padding: 10px 12px 12px; }
+.feed-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.feed-tags .badge { margin: 0; }
+.feed-caption { margin: 0; font-size: 15px; line-height: 1.5; white-space: pre-wrap; }

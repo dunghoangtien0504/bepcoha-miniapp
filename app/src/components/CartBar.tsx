@@ -4,7 +4,7 @@ import { useCart } from '../cart'
 import { money } from '../lib/format'
 import { Glyph } from './Glyph'
 
-const PAGES = ['/', '/dat-hang', '/cong-thuc', '/di-cho', '/di-cho-tuan']
+const PAGES = ['/', '/dat-hang', '/cong-thuc', '/di-cho', '/di-cho-tuan', '/meo-vat', '/cong-dong']
 
 // Thanh giỏ hàng nổi trên thanh tab (học DoorDash / Uber Eats / McDonald's): có hàng trong giỏ là luôn thấy đường đi thanh toán.
 // Số tiền chỉ là tạm tính theo giá đang hiện; tổng thật (voucher, Hạt Cốm) do server tính ở Giỏ hàng.

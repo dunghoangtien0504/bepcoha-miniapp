@@ -1,131 +1,184 @@
-// "Đi chợ 1 lần, nấu cả tuần": thực đơn 7 bữa tối cho 4 người, danh sách mua gộp theo quầy, giá tham khảo Co.opmart.
-// Giá chép tay từ Co.op Online (cooponline.vn) ngày 25/10/2026, khu vực mặc định của trang. Món đang giảm giá thì lấy
-// giá gốc để ước tính không bị thấp. Thứ Co.op Online không bán lẻ (cà rốt, giá đỗ, rau thơm) để price: null, không tự đoán.
-// Định lượng gộp từ công thức trong recipes.ts (món 3 người nhân lên cho 4 người). Cập nhật giá: sửa bảng dưới và PRICE_DATE.
-// Mẹo bảo quản là kiến thức chung, cần Cô Hạ đọc lại (giống các công thức gia đình).
+// "Đi chợ 1 lần, nấu cả tuần": 3 thực đơn gợi ý + khách tự chọn món. Danh sách mua sinh tự động từ nguyên liệu
+// các món (src/lib/ingredients.ts), nhân theo số người ăn, ước tính giá theo Co.op Online.
+// Giá chép tay từ Co.op Online (cooponline.vn) ngày 25/10/2026, khu vực mặc định của trang; món đang giảm giá lấy giá gốc.
+// Đơn vị đếm (củ, quả, tép…) quy ra gram theo cân nặng trung bình ghi bên cạnh — chỉ để ước tính.
+// Thứ không có giá bán lẻ trên Co.op Online (cà rốt, giá đỗ, rau thơm…) thì không ước tính, không tự đoán.
+// Mẹo sơ chế/bảo quản là kiến thức chung, cần Cô Hạ đọc lại.
+import { formatAmount, mergeIngredients, type Line, type ShopGroup } from './lib/ingredients'
+import { RECIPES, findRecipe, type Recipe } from './recipes'
 
 export const PRICE_DATE = '25/10/2026'
 export const PRICE_SOURCE = 'Co.op Online (cooponline.vn)'
-export const PEOPLE = 4
+export const PEOPLE_CHOICES = [2, 3, 4, 6]
+export const DEFAULT_PEOPLE = 4
 
 export interface WeekDay {
   day: string
-  dishes: string[] // slug trong recipes.ts
-  note?: string
+  dishes: string[]
 }
 
-export const WEEK: WeekDay[] = [
-  { day: 'Thứ 2', dishes: ['ca-kho-to', 'rau-muong-xao-toi'], note: 'Cá và rau lá mua về ăn trước cho tươi.' },
-  { day: 'Thứ 3', dishes: ['tom-rim-man-ngot', 'canh-cai-thit-bam'] },
-  { day: 'Thứ 4', dishes: ['ga-luoc-la-chanh', 'goi-ga-bap-cai'], note: 'Luộc 1 con gà: một nửa chặt ăn, một nửa xé làm gỏi.' },
-  { day: 'Thứ 5', dishes: ['thit-kho-trung', 'canh-bi-dao-tom'], note: 'Thịt kho để được 3–4 ngày, dư thì để dành bữa sau.' },
-  { day: 'Thứ 6', dishes: ['thit-xa-xiu', 'nom-tron-5-phut'], note: 'Ướp xá xíu từ tối thứ 5 cho nhanh.' },
-  { day: 'Thứ 7', dishes: ['bo-xao-hanh-tay', 'dau-phu-sot-ca-chua'] },
-  { day: 'Chủ nhật', dishes: ['trung-duc-thit', 'canh-chua-ca'] },
+export interface Menu {
+  key: string
+  name: string
+  hint: string
+  days: WeekDay[]
+}
+
+const D = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật']
+const week = (...pairs: [string, string][]): WeekDay[] => pairs.map((p, i) => ({ day: D[i], dishes: p }))
+
+export const MENUS: Menu[] = [
+  {
+    key: 'truyen-thong',
+    name: 'Cơm nhà truyền thống',
+    hint: 'Đủ thịt, tôm, gà, bò; mỗi bữa 1 mặn + 1 canh hoặc rau',
+    days: week(
+      ['suon-xao-chua-ngot', 'rau-muong-xao-toi'],
+      ['tom-rim-man-ngot', 'canh-cai-thit-bam'],
+      ['ga-luoc-la-chanh', 'goi-ga-bap-cai'],
+      ['thit-kho-trung', 'canh-bi-dao-tom'],
+      ['thit-xa-xiu', 'nom-tron-5-phut'],
+      ['bo-xao-hanh-tay', 'dau-phu-sot-ca-chua'],
+      ['trung-duc-thit', 'canh-chua-ca'],
+    ),
+  },
+  {
+    key: 'tiet-kiem',
+    name: 'Tiết kiệm',
+    hint: 'Nhiều trứng, đậu, thịt heo; vẫn đủ chất',
+    days: week(
+      ['trung-duc-thit', 'canh-cai-thit-bam'],
+      ['dau-phu-sot-ca-chua', 'rau-muong-xao-toi'],
+      ['thit-rang-chay-canh', 'canh-bi-dao-tom'],
+      ['trung-chien-hanh', 'canh-mong-toi-thit-bam'],
+      ['thit-kho-trung', 'bap-cai-xao-ca-chua'],
+      ['dau-phu-chien-sa-ot', 'canh-chua-ca'],
+      ['thit-luoc-cham-mam', 'rau-muong-xao-toi'],
+    ),
+  },
+  {
+    key: 'thanh-dam',
+    name: 'Thanh đạm, nhiều rau',
+    hint: 'Ít dầu mỡ, nhiều rau, đậu, nấm',
+    days: week(
+      ['dau-phu-sot-ca-chua', 'rau-muong-xao-toi'],
+      ['nam-kho-tieu', 'canh-bi-dao-tom'],
+      ['ga-luoc-la-chanh', 'goi-ga-bap-cai'],
+      ['dau-phu-chien-sa-ot', 'canh-mong-toi-thit-bam'],
+      ['tom-rim-man-ngot', 'bap-cai-xao-ca-chua'],
+      ['dau-que-xao-thit', 'canh-chua-ca'],
+      ['cha-com', 'canh-cai-thit-bam'],
+    ),
+  },
 ]
 
-export type ShopGroup = 'thit_ca' | 'trung_dau' | 'rau_cu' | 'gia_vi_tuoi' | 'gia_vi_kho' | 'haco'
+export const findMenu = (key: string) => MENUS.find(m => m.key === key)
+
+/** Mỗi món trong thực đơn nấu 1 lần; món lặp lại trong tuần thì nấu 2 lần. */
+export function menuRecipes(m: Menu): Recipe[] {
+  return m.days.flatMap(d => d.dishes).map(s => findRecipe(s)).filter((r): r is Recipe => !!r)
+}
 
 export const GROUPS: { key: ShopGroup; label: string; hint?: string }[] = [
   { key: 'thit_ca', label: '🥩 Thịt, cá, tôm' },
   { key: 'trung_dau', label: '🥚 Trứng, đậu phụ' },
   { key: 'rau_cu', label: '🥬 Rau, củ, quả' },
-  { key: 'gia_vi_tuoi', label: '🧄 Hành, tỏi, gừng, chanh' },
-  { key: 'gia_vi_kho', label: '🧂 Gia vị khô, gạo', hint: 'Nhà đã có thì bỏ qua, dùng được nhiều tuần.' },
-  { key: 'haco', label: '🌿 Sốt Bếp Cô Hạ', hint: 'Đặt trong app, giao tận nhà.' },
+  { key: 'gia_vi_tuoi', label: '🧄 Hành, tỏi, gừng, gia vị tươi' },
+  { key: 'gia_vi_kho', label: '🧂 Gia vị khô (nhà thường có sẵn)', hint: 'Không tính vào tiền đi chợ. Kiểm tra xem nhà còn không.' },
 ]
 
-export interface ShopItem {
-  id: string
-  group: ShopGroup
-  name: string
-  /** Lượng cần mua, ghi như khi đi chợ. */
-  buy: string
-  /** Thành tiền ước tính (đồng); null = Co.op Online không có giá bán lẻ. */
-  price: number | null
-  /** Đơn giá và tên hàng đã tra, để khách đối chiếu tại quầy. */
-  ref?: string
-  /** Dùng cho bữa nào. */
-  days: string[]
-  /** Mã hàng trong catalog Mini App (chỉ sốt Bếp Cô Hạ). */
-  sku?: string
+/** Giá tham khảo theo tên chuẩn (lib/ingredients.ts canon). perG = đồng/gram; perUnit = đồng/đơn vị đếm. */
+export const PRICES: Record<string, { perG?: number; perMl?: number; perUnit?: Record<string, number>; ref: string }> = {
+  'thịt ba chỉ': { perG: 209, ref: '209.000đ/kg · Ba rọi heo' },
+  'thịt nạc vai': { perG: 165, ref: '165.000đ/kg · Nạc vai heo' },
+  'thịt heo xay': { perG: 142, ref: '142.000đ/kg · Thịt heo xay' },
+  'sườn non': { perG: 281, ref: '281.000đ/kg · Sườn non heo' },
+  'thịt bò': { perG: 280, ref: '280.000đ/kg · Thịt đùi bò' },
+  'gà ta': { perUnit: { con: 139000 }, ref: '139.000đ/con 1,1–1,3kg · Gà ta (giá gốc)' },
+  'cá basa (hoặc cá lóc)': { perG: 69.9, ref: '69.900đ/kg · Cá basa bỏ đầu' },
+  'tôm': { perG: 199.9, ref: '199.900đ/kg · Tôm thẻ 51–60 con' },
+  'trứng vịt': { perUnit: { quả: 3700 }, ref: '22.200đ/vỉ 6 quả' },
+  'trứng gà': { perUnit: { quả: 3850 }, ref: '38.500đ/vỉ 10 quả (giá gốc)' },
+  'đậu phụ': { perUnit: { bìa: 6300 }, ref: '6.300đ/miếng' },
+  'rau muống': { perG: 32.9, perUnit: { bó: 16450 }, ref: '32.900đ/kg (1 bó ≈ 500g)' },
+  'cải ngọt': { perG: 55.3, ref: '16.600đ/gói 300g' },
+  'bắp cải': { perG: 28.9, ref: '28.900đ/kg · Bắp cải trái tim' },
+  'bí đao': { perG: 21.9, ref: '21.900đ/kg' },
+  'cà chua': { perUnit: { quả: 4400 }, ref: '36.900đ/kg (1 quả ≈ 120g)' },
+  'hành tây': { perUnit: { củ: 7600 }, ref: '38.000đ/kg (1 củ ≈ 200g)' },
+  'dứa (thơm)': { perUnit: { quả: 22000 }, ref: '22.000đ/quả' },
+  'đậu bắp': { perUnit: { quả: 1050 }, ref: '12.500đ/gói 200g (≈ 12 quả)' },
+  'nấm (rơm hoặc đùi gà)': { perG: 200, ref: '40.000đ/gói 200g · Nấm đùi gà' },
+  'hành tím': { perUnit: { củ: 1400 }, ref: '116.900đ/kg (1 củ ≈ 12g)' },
+  'tỏi': { perUnit: { tép: 550, củ: 5500 }, ref: '32.900đ/gói 300g (1 tép ≈ 5g)' },
+  'gừng': { perUnit: { củ: 4250 }, ref: '8.500đ/gói 100g (1 củ ≈ 50g)' },
+  'hành lá': { perUnit: { cây: 1250 }, ref: '12.500đ/gói 100g (1 cây ≈ 10g)' },
+  'me chua': { perG: 53, ref: '53.000đ/kg · Me vắt' },
+  'rau mồng tơi': { perG: 45, ref: '13.500đ/gói 300g · Co.op Select' },
+  'giò sống': { perG: 159.5, ref: '31.900đ/vỉ 200g · Co.op Select (giá gốc)' },
+  'sả': { perUnit: { cây: 750 }, ref: '24.900đ/kg (1 cây ≈ 30g)' },
+  'mộc nhĩ': { perUnit: { tai: 1100 }, ref: '35.400đ/gói 100g · Nấm mèo (1 tai ≈ 3g)' },
+  'cà rốt': { perUnit: { củ: 6400 }, ref: '42.900đ/kg · Cà rốt Đà Lạt (1 củ ≈ 150g)' },
+  'cốm': { perG: 80, ref: '80.000đ/kg · Cốm khô Bếp Cô Hạ' },
+  'ớt': { perUnit: { quả: 750 }, ref: '72.500đ/kg · Ớt sừng (1 quả ≈ 10g)' },
+  'chanh': { perUnit: { quả: 1200 }, ref: '23.500đ/kg · Chanh không hạt (1 quả ≈ 50g)' },
+  'nước dừa': { perMl: 45, ref: '45.000đ/hộp 1L (giá gốc)' },
 }
 
-// Thành tiền = đơn giá × lượng mua (làm tròn tới 100đ).
-export const SHOP: ShopItem[] = [
-  { id: 'ca-basa', group: 'thit_ca', name: 'Cá basa (hoặc cá lóc)', buy: '1kg', price: 69900, ref: '69.900đ/kg · Cá basa nguyên con bỏ đầu', days: ['Thứ 2', 'Chủ nhật'] },
-  { id: 'tom-the', group: 'thit_ca', name: 'Tôm thẻ', buy: '800g', price: 159900, ref: '199.900đ/kg · Tôm thẻ 51–60 con', days: ['Thứ 3', 'Thứ 5'] },
-  { id: 'ga-ta', group: 'thit_ca', name: 'Gà ta nguyên con', buy: '1 con (1,1–1,3kg)', price: 139000, ref: '139.000đ/con · Gà ta Tam Nông (giá gốc)', days: ['Thứ 4'] },
-  { id: 'ba-chi', group: 'thit_ca', name: 'Thịt ba chỉ', buy: '800g', price: 167200, ref: '209.000đ/kg · Ba rọi heo', days: ['Thứ 5'] },
-  { id: 'nac-vai', group: 'thit_ca', name: 'Thịt nạc vai', buy: '700g', price: 115500, ref: '165.000đ/kg · Nạc vai heo', days: ['Thứ 6'] },
-  { id: 'thit-xay', group: 'thit_ca', name: 'Thịt heo xay', buy: '350g', price: 49700, ref: '142.000đ/kg · Thịt heo xay', days: ['Thứ 3', 'Chủ nhật'] },
-  { id: 'bo', group: 'thit_ca', name: 'Thịt bò đùi (hoặc thăn)', buy: '400g', price: 112000, ref: '280.000đ/kg · Thịt đùi bò', days: ['Thứ 7'] },
+/** Tiền ước tính của 1 dòng; null = không có giá hoặc không đổi được đơn vị. */
+export function estimate(l: Line): number | null {
+  const p = PRICES[l.label]
+  if (!p || l.amount === null) return null
+  let v: number | null = null
+  if (l.unit === 'g' && p.perG) v = l.amount * p.perG
+  else if (l.unit === 'ml' && p.perMl) v = l.amount * p.perMl
+  else if (p.perUnit && p.perUnit[l.unit] !== undefined) v = l.amount * p.perUnit[l.unit]
+  return v === null ? null : Math.round(v / 100) * 100
+}
 
-  { id: 'trung-vit', group: 'trung_dau', name: 'Trứng vịt', buy: '1 vỉ 6 quả', price: 22200, ref: '22.200đ/vỉ 6 quả', days: ['Thứ 5'] },
-  { id: 'trung-ga', group: 'trung_dau', name: 'Trứng gà', buy: '1 vỉ 10 quả', price: 38500, ref: '38.500đ/vỉ 10 quả (giá gốc)', days: ['Chủ nhật'] },
-  { id: 'dau-phu', group: 'trung_dau', name: 'Đậu phụ trắng', buy: '5 miếng', price: 31500, ref: '6.300đ/miếng', days: ['Thứ 7'] },
-
-  { id: 'rau-muong', group: 'rau_cu', name: 'Rau muống', buy: '700g', price: 23000, ref: '32.900đ/kg', days: ['Thứ 2'] },
-  { id: 'cai-ngot', group: 'rau_cu', name: 'Cải ngọt', buy: '1 gói 300g', price: 16600, ref: '16.600đ/gói 300g', days: ['Thứ 3'] },
-  { id: 'bap-cai', group: 'rau_cu', name: 'Bắp cải', buy: '500g (nửa bắp nhỏ)', price: 14500, ref: '28.900đ/kg · Bắp cải trái tim', days: ['Thứ 4', 'Thứ 6'] },
-  { id: 'bi-dao', group: 'rau_cu', name: 'Bí đao', buy: '500g', price: 11000, ref: '21.900đ/kg', days: ['Thứ 5'] },
-  { id: 'ca-chua', group: 'rau_cu', name: 'Cà chua', buy: '700g (khoảng 6 quả)', price: 25800, ref: '36.900đ/kg', days: ['Thứ 7', 'Chủ nhật'] },
-  { id: 'hanh-tay', group: 'rau_cu', name: 'Hành tây', buy: '2 củ (khoảng 400g)', price: 15200, ref: '38.000đ/kg', days: ['Thứ 4', 'Thứ 7'] },
-  { id: 'dua-leo', group: 'rau_cu', name: 'Dưa leo (dưa chuột)', buy: '500g', price: 19200, ref: '19.200đ/gói 500g', days: ['Thứ 6'] },
-  { id: 'thom', group: 'rau_cu', name: 'Dứa (thơm)', buy: '1 quả', price: 22000, ref: '22.000đ/quả', days: ['Chủ nhật'] },
-  { id: 'dau-bap', group: 'rau_cu', name: 'Đậu bắp', buy: '1 gói 200g', price: 12500, ref: '12.500đ/gói 200g', days: ['Chủ nhật'] },
-  { id: 'ca-rot', group: 'rau_cu', name: 'Cà rốt', buy: '2 củ', price: null, days: ['Thứ 4', 'Thứ 6'] },
-  { id: 'gia-do', group: 'rau_cu', name: 'Giá đỗ', buy: '100g', price: null, days: ['Chủ nhật'] },
-  { id: 'rau-thom', group: 'rau_cu', name: 'Rau thơm: rau răm, ngò gai, rau ngổ, lá chanh, dọc mùng', buy: 'mỗi thứ 1 nắm', price: null, days: ['Thứ 4', 'Chủ nhật'] },
-
-  { id: 'hanh-tim', group: 'gia_vi_tuoi', name: 'Hành tím', buy: '200g', price: 23400, ref: '116.900đ/kg', days: ['Cả tuần'] },
-  { id: 'toi', group: 'gia_vi_tuoi', name: 'Tỏi', buy: '1 gói 300g (dùng 2–3 tuần)', price: 32900, ref: '32.900đ/gói 300g', days: ['Cả tuần'] },
-  { id: 'hanh-la', group: 'gia_vi_tuoi', name: 'Hành lá', buy: '2 gói 100g', price: 25000, ref: '12.500đ/gói 100g', days: ['Cả tuần'] },
-  { id: 'gung', group: 'gia_vi_tuoi', name: 'Gừng', buy: '100g', price: 8500, ref: '8.500đ/gói 100g', days: ['Thứ 2', 'Thứ 4', 'Chủ nhật'] },
-  { id: 'chanh', group: 'gia_vi_tuoi', name: 'Chanh', buy: '250g', price: 12500, ref: '12.500đ/vỉ 250g', days: ['Thứ 4'] },
-  { id: 'me', group: 'gia_vi_tuoi', name: 'Me chua (me vắt)', buy: '100g', price: 5300, ref: '53.000đ/kg', days: ['Chủ nhật'] },
-  { id: 'nuoc-dua', group: 'gia_vi_tuoi', name: 'Nước dừa tươi', buy: '1 lít', price: 45000, ref: '45.000đ/hộp 1L (giá gốc)', days: ['Thứ 5'] },
-
-  { id: 'nuoc-mam', group: 'gia_vi_kho', name: 'Nước mắm', buy: '1 chai 900ml', price: 59000, ref: '59.000đ · Nam Ngư 900ml (giá gốc)', days: ['Cả tuần'] },
-  { id: 'duong', group: 'gia_vi_kho', name: 'Đường', buy: '1kg', price: 31200, ref: '31.200đ · Biên Hòa 1kg', days: ['Cả tuần'] },
-  { id: 'dau-an', group: 'gia_vi_kho', name: 'Dầu ăn', buy: '1 chai 1L', price: 69800, ref: '69.800đ · Dầu đậu nành 1L (giá gốc)', days: ['Cả tuần'] },
-  { id: 'dau-hao', group: 'gia_vi_kho', name: 'Dầu hào', buy: '1 chai 350g', price: 24000, ref: '24.000đ · Cholimex 350g', days: ['Thứ 7'] },
-  { id: 'gao', group: 'gia_vi_kho', name: 'Gạo', buy: '1 túi 5kg', price: 197000, ref: '197.000đ · Gạo ST25 5kg', days: ['Cả tuần'] },
-
-  { id: 'sot-xa-xiu', group: 'haco', name: 'Sốt Xá Xíu Bếp Cô Hạ', buy: '1 hũ 500g (dùng 5–7 lần)', price: 100000, days: ['Thứ 6'], sku: 'sxx-500g' },
-  { id: 'sot-nom', group: 'haco', name: 'Sốt Trộn Nộm Bếp Cô Hạ', buy: '1 chai 500g (dùng 6–8 lần)', price: 65000, days: ['Thứ 4', 'Thứ 6'], sku: 'stn-500g' },
-]
-
-export interface WeekTotals {
+export interface ShopList {
+  lines: (Line & { cost: number | null; ref?: string; text: string })[]
   fresh: number
-  pantry: number
-  haco: number
   unpriced: number
-  perMeal: number
-  perPersonMeal: number
+  /** Tên các thứ có định lượng mà chưa có giá (để ghi rõ cho khách). */
+  unpricedNames: string[]
+  meals: number
 }
 
-/** Tổng tiền: đồ tươi của tuần (tính vào giá mỗi bữa), gia vị khô và sốt tính riêng vì dùng được nhiều tuần. */
-export function weekTotals(items: ShopItem[] = SHOP, days = WEEK.length, people = PEOPLE): WeekTotals {
-  const sum = (f: (i: ShopItem) => boolean) => items.filter(f).reduce((n, i) => n + (i.price ?? 0), 0)
-  const fresh = sum(i => i.group !== 'gia_vi_kho' && i.group !== 'haco')
-  return {
-    fresh,
-    pantry: sum(i => i.group === 'gia_vi_kho'),
-    haco: sum(i => i.group === 'haco'),
-    unpriced: items.filter(i => i.price === null).length,
-    perMeal: Math.round(fresh / days / 1000) * 1000,
-    perPersonMeal: Math.round(fresh / days / people / 1000) * 1000,
-  }
+/** Danh sách mua cho các món đã chọn, cho `people` người. `meals` = số bữa (mỗi bữa 2 món) để tính tiền/bữa. */
+export function shopList(recipes: Recipe[], people: number, meals = Math.max(1, Math.ceil(recipes.length / 2))): ShopList {
+  const lines = mergeIngredients(recipes, people).map(l => ({ ...l, cost: estimate(l), ref: PRICES[l.label]?.ref, text: formatAmount(l) }))
+  const fresh = lines.filter(l => l.group !== 'gia_vi_kho').reduce((n, l) => n + (l.cost ?? 0), 0)
+  // Chỉ đếm thứ có định lượng mà chưa có giá; thứ "một ít" (rau thơm, ớt…) không tính.
+  const unpricedNames = lines.filter(l => l.group !== 'gia_vi_kho' && l.cost === null && l.amount !== null).map(l => l.label)
+  return { lines, fresh, unpriced: unpricedNames.length, unpricedNames, meals }
 }
+
+export const perMeal = (s: ShopList) => Math.round(s.fresh / s.meals / 1000) * 1000
+
+/** Món khách có thể tự chọn (mọi món trong thư viện). */
+export const PICKABLE = RECIPES
 
 /** Sơ chế 1 lần vào ngày đi chợ (khoảng 60–90 phút) để cả tuần nấu nhanh. */
 export const PREP: { title: string; detail: string }[] = [
   { title: 'Chia thịt theo bữa', detail: 'Mỗi bữa một túi zip, ghi tên món và ngày ăn. Phần ăn từ thứ 4 trở đi cho ngăn đá; tối hôm trước chuyển xuống ngăn mát để rã đông.' },
-  { title: 'Làm sạch cá, tôm rồi chia phần', detail: 'Cá chà muối và gừng, rửa sạch, cắt khúc. Tôm cắt râu, rút chỉ. Phần ăn thứ 2 để ngăn mát, còn lại cho ngăn đá.' },
-  { title: 'Gà để ngăn đá', detail: 'Gà tươi ở ngăn mát chỉ nên giữ 1–2 ngày. Cho ngăn đá ngay, tối thứ 3 chuyển xuống ngăn mát để thứ 4 luộc.' },
+  { title: 'Làm sạch cá, tôm rồi chia phần', detail: 'Cá chà muối và gừng, rửa sạch, cắt khúc. Tôm cắt râu, rút chỉ. Phần ăn trong 2 ngày đầu để ngăn mát, còn lại cho ngăn đá.' },
+  { title: 'Gà để ngăn đá', detail: 'Gà tươi ở ngăn mát chỉ nên giữ 1–2 ngày. Cho ngăn đá ngay, tối hôm trước chuyển xuống ngăn mát.' },
   { title: 'Rau lá: không rửa trước', detail: 'Nhặt bỏ lá úa, bọc khăn giấy khô rồi cho hộp hoặc túi kín, để ngăn rau. Rửa ngay trước khi nấu. Rau muống, cải ngọt ăn trong 2–3 ngày đầu.' },
   { title: 'Củ quả để được lâu', detail: 'Bí đao, bắp cải, cà rốt, hành tây, cà chua, dứa giữ được 5–7 ngày. Hành tây, hành tím, tỏi để nơi khô thoáng, không cho tủ lạnh.' },
   { title: 'Hành lá, rau thơm', detail: 'Cắt bớt rễ, cuộn khăn giấy hơi ẩm, cho hộp kín. Có thể thái sẵn một ít hành lá cho hộp nhỏ để dùng dần.' },
   { title: 'Phi sẵn hành tỏi', detail: 'Phi một mẻ hành tím và tỏi, để nguội cho hũ kín. Cả tuần rắc canh, xào, kho đều nhanh hơn.' },
 ]
+
+/** Chữ để khách chép sang Zalo/ghi chú khi đi chợ. */
+export function shopListText(title: string, s: ShopList, people: number): string {
+  const out = [`ĐI CHỢ — ${title} (${people} người) · Bếp Cô Hạ`]
+  for (const g of GROUPS) {
+    const list = s.lines.filter(l => l.group === g.key)
+    if (!list.length) continue
+    out.push('', g.label.replace(/^\S+\s/, '').toUpperCase())
+    for (const l of list) out.push(`☐ ${l.label}: ${l.text}${l.cost ? ` (~${l.cost.toLocaleString('vi-VN')}đ)` : ''}`)
+  }
+  out.push('', `Giá tham khảo ${PRICE_SOURCE} ngày ${PRICE_DATE}.`)
+  return out.join('\n')
+}

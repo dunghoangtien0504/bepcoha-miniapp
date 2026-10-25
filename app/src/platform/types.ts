@@ -17,6 +17,8 @@ export interface Platform {
   share(p: { title: string; text: string; url: string }): Promise<'shared' | 'copied' | 'cancelled'>
   /** Chia sẻ một đoạn chữ, không kèm link (lời báo quà). Zalo: openShareSheet type text; web: Web Share hoặc chép. */
   shareText(text: string): Promise<'shared' | 'copied' | 'cancelled'>
+  /** Khoe ảnh lên Nhật ký Zalo (Zalo: openPostFeed kiểu image, cần link ảnh https công khai). Web: chia sẻ chữ. */
+  postFeed(imageUrl: string, text: string): Promise<'shared' | 'copied' | 'cancelled'>
   openExternal(url: string): Promise<void>
   /** Giữ màn hình sáng khi đang nấu (chế độ nấu). Zalo: keepScreen; web: Wake Lock API nếu trình duyệt hỗ trợ. */
   keepAwake(on: boolean): Promise<void>

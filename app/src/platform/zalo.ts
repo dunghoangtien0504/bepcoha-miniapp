@@ -62,6 +62,16 @@ export const zaloPlatform: Platform = {
     }
   },
 
+  async postFeed(imageUrl) {
+    const { openPostFeed } = await sdk()
+    try {
+      await openPostFeed({ type: 'image', data: { imageUrl } })
+      return 'shared'
+    } catch {
+      return 'cancelled'
+    }
+  },
+
   async openExternal(url) {
     const { openWebview } = await sdk()
     // Trang sản phẩm Haco-OS là đường dẫn tương đối ở bản web; trong Zalo phải mở bằng địa chỉ đầy đủ.
